@@ -1,1 +1,1 @@
-openaikey="dummyteststreet"
+openaikey="dummyteststreetmain"
