@@ -1,1 +1,1 @@
-openaikey="dummy"
+openaikey="dummytest"
