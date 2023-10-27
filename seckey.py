@@ -1,5 +1,3 @@
-openaikey="dummyteststreettest"
-openaikey="dummyteststreetakash"
-addedreadme="starsupdate"
-
+openaikey="dummyteststreetmain"
+openaikey="dummyteststreetkumar"
 
