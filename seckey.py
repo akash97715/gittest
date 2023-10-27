@@ -1,1 +1,1 @@
-openaikey="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"
+openaikey="dummyteststreet"
