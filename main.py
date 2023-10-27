@@ -27,7 +27,7 @@ class Query(BaseModel):
 
 @app.post("/items/{query}")
 def read_item(request: Query):
-    llm = OpenAI(temperature=0.9)
+    llm = OpenAI(temperature=0.1)
     name = llm.predict(request.query)
     db_up.append(json.dumps(name))
     db_up.append(json.dumps(request.query))
