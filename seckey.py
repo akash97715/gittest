@@ -1,5 +1,4 @@
-
-openaikey="dummyteststreetmain"
+openaikey="dummyteststreettest"
 openaikey="dummyteststreetakash"
 addedreadme="stars"
 
