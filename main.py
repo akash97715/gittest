@@ -1,4 +1,4 @@
-from bs4 import BeautifulSoup, NavigableString
+from bs4 import BeautifulSoup, NavigableString, Tag
 from docx import Document
 from docx.shared import Pt
 from io import BytesIO
@@ -19,23 +19,29 @@ class DocumentCreator:
 
     def add_html_content_to_docx(self, document, html_content):
         soup = BeautifulSoup(html_content, "html.parser")
-        p = document.add_paragraph()
 
-        for elem in soup.descendants:
-            if isinstance(elem, NavigableString):
-                if elem.strip():  # Avoid adding empty strings
-                    run = p.add_run(str(elem))
-                    self.apply_formatting(run, elem.parent.name)
-            elif elem.name in ['p', 'h1', 'h2', 'h3']:
-                # Add a new paragraph if the tag is p or a heading
-                p = document.add_paragraph()
-                run = p.add_run(elem.get_text())
-                self.apply_formatting(run, elem.name)
-                if elem.name in ['h1', 'h2', 'h3']:
-                    run.bold = True
-                    p.style = document.styles['Heading ' + elem.name[1]]
-                # For a paragraph, apply the default font size
-                run.font.size = Pt(12)
+        for elem in soup.recursiveChildGenerator():
+            if isinstance(elem, NavigableString) and not isinstance(elem.parent, Tag):
+                continue  # Skip NavigableStrings that are children of Tags, since Tag handles them.
+            if isinstance(elem, Tag):  # If the element is a tag
+                if elem.name == 'p':
+                    # Start a new paragraph for each <p> tag.
+                    p = document.add_paragraph()
+                    for content in elem.contents:
+                        if isinstance(content, NavigableString):
+                            run = p.add_run(str(content))
+                            self.apply_formatting(run, elem.name)
+                elif elem.name in ['h1', 'h2', 'h3']:
+                    # Start a new paragraph and apply the heading style.
+                    p = document.add_paragraph(style=document.styles['Heading ' + elem.name[1]])
+                    p.add_run(elem.text)
+                elif elem.name in ['b', 'strong', 'i', 'em', 'u']:
+                    # If the tag is bold, italic, or underline, apply the appropriate formatting.
+                    parent = elem.find_parent(['p', 'h1', 'h2', 'h3'])
+                    if parent.name == 'p':
+                        # Make sure we're still in the same paragraph.
+                        run = p.add_run(elem.text)
+                        self.apply_formatting(run, elem.name)
 
     def create_document(self):
         document = Document()
@@ -45,27 +51,16 @@ class DocumentCreator:
 
             citations = placeholder['content'].get('citations')
             if citations:
-                # Add the citations with a smaller font size, as plain text
-                citation_text = "Citations:\n" + "\n".join(
-                    [f"Source: {c['source']}, Page: {c['page']}" for c in citations]
-                )
-                p = document.add_paragraph(citation_text)
-                for run in p.runs:
-                    run.font.size = Pt(8)
+                # Add the citations with a smaller font size, as plain text.
+                p = document.add_paragraph("Citations:\n")
+                for c in citations:
+                    citation_text = f"Source: {c['source']}, Page: {c['page']}"
+                    run = p.add_run(citation_text)
+                    run.font.size = Pt(8)  # Set font size for citations to 8
+                    p.add_run("\n")  # Add a new line after each citation
 
         # Instead of saving the file directly, return a BytesIO object
         docx_blob = BytesIO()
         document.save(docx_blob)
         docx_blob.seek(0)
         return docx_blob
-
-# Use the payload provided in the true/false/null form as required by the code
-doc_creator = DocumentCreator(payload)
-docx_blob = doc_creator.create_document()
-
-# Save the document to a file for download (example for a web server)
-file_path = "/path/to/document.docx"  # Replace with your desired path
-with open(file_path, "wb") as f:
-    f.write(docx_blob.getvalue())
-
-print(f"Document saved to {file_path}.")
