@@ -1,4 +1,4 @@
-from bs4 import BeautifulSoup, NavigableString, Tag
+from bs4 import BeautifulSoup, NavigableString
 from docx import Document
 from docx.shared import Pt
 from io import BytesIO
@@ -7,8 +7,7 @@ class DocumentCreator:
     def __init__(self, payload):
         self.payload = payload
 
-    @staticmethod
-    def apply_formatting(run, tag):
+    def apply_formatting(self, run, tag):
         # Apply formatting based on the tag
         if tag in ['strong', 'b']:
             run.bold = True
@@ -16,51 +15,55 @@ class DocumentCreator:
             run.italic = True
         if tag == 'u':
             run.underline = True
+        run.font.size = Pt(12)
 
     def add_html_content_to_docx(self, document, html_content):
         soup = BeautifulSoup(html_content, "html.parser")
+        added_content = set()  # Track added content to avoid duplicates
+        p = document.add_paragraph()
 
-        for elem in soup.recursiveChildGenerator():
-            if isinstance(elem, NavigableString) and not isinstance(elem.parent, Tag):
-                continue  # Skip NavigableStrings that are children of Tags, since Tag handles them.
-            if isinstance(elem, Tag):  # If the element is a tag
-                if elem.name == 'p':
-                    # Start a new paragraph for each <p> tag.
+        for elem in soup.descendants:
+            if isinstance(elem, NavigableString):
+                parent_tag = elem.parent.name if elem.parent else None
+                if str(elem).strip() and str(elem) not in added_content:
+                    run = p.add_run(str(elem))
+                    self.apply_formatting(run, parent_tag)
+                    added_content.add(str(elem))
+            elif elem.name in ['p', 'h1', 'h2', 'h3'] and elem not in added_content:
+                # Only add a new paragraph if we're not already processing one, to avoid duplicate breaks
+                if p.text or p.runs:  # Check if paragraph already has content before adding a new one
                     p = document.add_paragraph()
-                    for content in elem.contents:
-                        if isinstance(content, NavigableString):
-                            run = p.add_run(str(content))
-                            self.apply_formatting(run, elem.name)
-                elif elem.name in ['h1', 'h2', 'h3']:
-                    # Start a new paragraph and apply the heading style.
-                    p = document.add_paragraph(style=document.styles['Heading ' + elem.name[1]])
-                    p.add_run(elem.text)
-                elif elem.name in ['b', 'strong', 'i', 'em', 'u']:
-                    # If the tag is bold, italic, or underline, apply the appropriate formatting.
-                    parent = elem.find_parent(['p', 'h1', 'h2', 'h3'])
-                    if parent.name == 'p':
-                        # Make sure we're still in the same paragraph.
-                        run = p.add_run(elem.text)
-                        self.apply_formatting(run, elem.name)
+                run = p.add_run(elem.text.strip())
+                self.apply_formatting(run, elem.name)
+                added_content.add(elem)
 
     def create_document(self):
         document = Document()
-        for placeholder in self.payload['placeholders']:
-            html_content = placeholder['content']['text']
+        for placeholder in self.payload.get("placeholders", []):
+            html_content = placeholder.get("content", {}).get("text", "")
             self.add_html_content_to_docx(document, html_content)
 
-            citations = placeholder['content'].get('citations')
+            citations = placeholder.get("content", {}).get("citations", "")
             if citations:
-                # Add the citations with a smaller font size, as plain text.
-                p = document.add_paragraph("Citations:\n")
-                for c in citations:
-                    citation_text = f"Source: {c['source']}, Page: {c['page']}"
-                    run = p.add_run(citation_text)
-                    run.font.size = Pt(8)  # Set font size for citations to 8
-                    p.add_run("\n")  # Add a new line after each citation
+                citation_text = "Citations:\n" + "\n".join(
+                    [f"Source: {c['source']}, Page: {c['page']}" for c in citations]
+                )
+                p = document.add_paragraph()
+                citation_run = p.add_run(citation_text)
+                citation_run.font.size = Pt(8)  # Set font size for citations to 8
 
         # Instead of saving the file directly, return a BytesIO object
         docx_blob = BytesIO()
         document.save(docx_blob)
         docx_blob.seek(0)
         return docx_blob
+
+doc_creator = DocumentCreator(payload)
+docx_blob = doc_creator.create_document()
+
+# Example for saving the DOCX
+file_path = "your_document_path_here.docx"  # Adjust this path
+with open(file_path, "wb") as f:
+    f.write(docx_blob.getvalue())
+
+print("Document saved.")
