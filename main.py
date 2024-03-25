@@ -7,37 +7,33 @@ class DocumentCreator:
     def __init__(self, payload):
         self.payload = payload
 
-    def apply_formatting(self, run, tag):
-        # Apply formatting based on the tag
-        if tag in ['strong', 'b']:
-            run.bold = True
-        if tag in ['em', 'i']:
-            run.italic = True
-        if tag == 'u':
-            run.underline = True
-        run.font.size = Pt(12)
+    def process_element(self, element, document):
+        """Process individual HTML elements and add them to the DOCX document with formatting."""
+        if isinstance(element, NavigableString):
+            # Directly add navigable strings that are not just whitespace
+            if element.strip():
+                p = document.add_paragraph(element.strip())
+                p.runs[0].font.size = Pt(12)  # Default font size for all text
+        elif element.name in ['p', 'h1', 'h2', 'h3']:
+            # Create a new paragraph for p and heading elements, apply styles for headings
+            text = element.get_text(strip=True)
+            if text:  # Ensure there's text to add
+                if element.name in ['h1', 'h2', 'h3']:
+                    p = document.add_paragraph(text, style='Heading ' + element.name[1])
+                else:
+                    p = document.add_paragraph(text)
+                p.runs[0].font.size = Pt(12)
+        # For formatting tags within paragraphs (e.g., <strong>, <em>, <u>), this simple approach does not apply formatting.
+        # You might need to extend the logic here for a more comprehensive solution.
 
     def add_html_content_to_docx(self, document, html_content):
+        """Convert HTML content to DOCX format."""
         soup = BeautifulSoup(html_content, "html.parser")
-        added_content = set()  # Track added content to avoid duplicates
-        p = document.add_paragraph()
-
-        for elem in soup.descendants:
-            if isinstance(elem, NavigableString):
-                parent_tag = elem.parent.name if elem.parent else None
-                if str(elem).strip() and str(elem) not in added_content:
-                    run = p.add_run(str(elem))
-                    self.apply_formatting(run, parent_tag)
-                    added_content.add(str(elem))
-            elif elem.name in ['p', 'h1', 'h2', 'h3'] and elem not in added_content:
-                # Only add a new paragraph if we're not already processing one, to avoid duplicate breaks
-                if p.text or p.runs:  # Check if paragraph already has content before adding a new one
-                    p = document.add_paragraph()
-                run = p.add_run(elem.text.strip())
-                self.apply_formatting(run, elem.name)
-                added_content.add(elem)
+        for elem in soup.find_all(['p', 'h1', 'h2', 'h3', NavigableString], recursive=False):
+            self.process_element(elem, document)
 
     def create_document(self):
+        """Create the DOCX document based on the placeholders in the payload."""
         document = Document()
         for placeholder in self.payload.get("placeholders", []):
             html_content = placeholder.get("content", {}).get("text", "")
@@ -45,24 +41,23 @@ class DocumentCreator:
 
             citations = placeholder.get("content", {}).get("citations", "")
             if citations:
-                citation_text = "Citations:\n" + "\n".join(
-                    [f"Source: {c['source']}, Page: {c['page']}" for c in citations]
-                )
-                p = document.add_paragraph()
-                citation_run = p.add_run(citation_text)
-                citation_run.font.size = Pt(8)  # Set font size for citations to 8
+                # Add citations with a smaller font size
+                citation_text = "\n".join(f"Source: {c['source']}, Page: {c['page']}" for c in citations)
+                p = document.add_paragraph("Citations:\n" + citation_text)
+                p.runs[0].font.size = Pt(8)
 
-        # Instead of saving the file directly, return a BytesIO object
+        # Return a BytesIO object containing the DOCX file
         docx_blob = BytesIO()
         document.save(docx_blob)
         docx_blob.seek(0)
         return docx_blob
 
+# Example usage
 doc_creator = DocumentCreator(payload)
 docx_blob = doc_creator.create_document()
 
-# Example for saving the DOCX
-file_path = "your_document_path_here.docx"  # Adjust this path
+# Example for saving the DOCX, replace "your_document_path_here.docx" with your actual file path
+file_path = "/path/to/your_document.docx"
 with open(file_path, "wb") as f:
     f.write(docx_blob.getvalue())
 
