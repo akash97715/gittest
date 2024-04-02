@@ -1,5 +1,13 @@
-Leveraging the flexibility and power of Python, our latest feature enhances the conversion of JSON data into professional PowerPoint (PPTX) presentations. This sophisticated capability enables the dynamic generation of slides based on a structured JSON input, allowing for a customizable and automated approach to presentation creation. Users can now transform JSON payloads, which specify layout preferences, content distribution, and design elements, into visually appealing slides that maintain a consistent format across various sections, such as headers, footers, and main content areas.
-
-Our CustomPPTGenerator class takes advantage of the python-pptx library to define slide layouts, manage content alignment, and ensure aesthetic text formatting, including font styles and background colors. Whether you're aiming for a detailed report, a marketing presentation, or an educational module, this tool streamlines the process, making it easier to produce high-quality presentations directly from JSON configurations. By incorporating predefined templates or customizing layouts on the fly, users can create presentations that resonate with their audience, all with minimal manual intervention.
-
-This feature is particularly useful for teams looking to automate report generation, educators preparing course materials, and businesses crafting tailored marketing pitches. It exemplifies our commitment to enhancing productivity through automation, providing a seamless bridge between data content and visual representation.
+{
+    "Version": "2012-10-17",
+    "Statement": [
+        {
+            "Effect": "Allow",
+            "Principal": [
+                "Service": "es.amazonaws.com",
+				"AWS": "arn:aws:iam::420737321821:role/CUSPFE-ias-test-vsl-docinsight-opensearch-migration"
+				],
+            "Action": "sts:AssumeRole"
+        }
+    ]
+}
