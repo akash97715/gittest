@@ -1,36 +1,8 @@
-[2:37 PM] Deep, Akash (External)
-from langchain_core.stores import BaseStore
-from typing import Iterator, Sequence, Tuple, TypeVar,List,Optional
-from langchain_core.documents import  Document
-import json
- 
+[5:25 PM] Deep, Akash (External)
+2024-04-04 17:20:38.338 | INFO     | __main__:<module>:38 - Successfully ingested2024-04-04 17:20:38.347 | INFO     | __main__:<module>:44 - Successfully stored parent documents
+the key is 2fbcb4be-478f-4c47-a4f8-f96ccf763953the key is 39b74943-b455-4c0b-b4b4-cac23dc43877the key is 100839f6-f10f-4666-a98e-2457e80ef702the key is 9eb8ebe2-c605-40fa-b866-1022c756ae44the key is 4631c389-fff3-4315-92a6-9f9aa3177aba
+[5:25 PM] Deep, Akash (External)
 K = TypeVar("K")
-V = TypeVar("V")
+#Sequence[K]
  
-import boto3
- 
-class S3DocStore(BaseStore):
-    def __init__(self, bucket_name):
-        self.s3 = boto3.client('s3')
-        self.bucket = bucket_name
- 
-    def mset(self, key_value_pairs: Sequence[Tuple[K, V]])->None:
-        for key, document in key_value_pairs:
-            self.s3.put_object(
-                Body=json.dumps(dict(document)),
-                Bucket=self.bucket,
-                Key=f"{key}",
-            )
- 
-    def mget(self, keys: Sequence[K])-> List[Optional[V]]:
-        return  [Document(**json.loads(self.s3.get_object(Bucket=self.bucket, Key=f"{key}")["Body"].read())) for key in keys]
-   
-    def mdelete(self, keys: Sequence) -> None:
-        for key in keys:
-            self.s3.delete_object(Bucket=self.bucket, key=key)
- 
-    def yield_keys(self, *, prefix: str | None = None) -> Iterator | Iterator[str]:
-        pass
- 
-[2:39 PM] Deep, Akash (External)
-11 class S3DocStore(BaseStore):     12     def __init__(self, bucket_name):     13         self.s3 = boto3.client('s3') Cell In[4], line 31     28     for key in keys:     29         self.s3.delete_object(Bucket=self.bucket, key=key)---> 31 def yield_keys(self, *, prefix: str | None = None) -> Iterator | Iterator[str]:     32     pass  TypeError: unsupported operand type(s) for |: 'type' and 'NoneType'
+file_store.mget(K)
