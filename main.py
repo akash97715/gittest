@@ -1,36 +1,34 @@
-import boto3
+import asyncio
+import aioboto3
 import json
-from concurrent.futures import ThreadPoolExecutor, as_completed
 
 class Document:
     def __init__(self, **kwargs):
         self.__dict__.update(kwargs)
 
-s3 = boto3.client('s3')
 bucket_name = 'your-bucket-name'
 
-def parse_content(key):
+async def parse_content(s3, key):
     try:
-        response = s3.get_object(Bucket=bucket_name, Key=key)
-        content = response['Body'].read().decode('utf-8')
-        return json.loads(content)
+        response = await s3.get_object(Bucket=bucket_name, Key=key)
+        async with response['Body'] as stream:
+            content = await stream.read()
+        return json.loads(content.decode('utf-8'))
     except json.JSONDecodeError:
-        return {'content': content}
+        return {'content': content.decode('utf-8')}
 
-def fetch_document(key):
-    return Document(**parse_content(key))
+async def fetch_document(s3, key):
+    return Document(**await parse_content(s3, key))
 
-keys = ['your-key-1', 'your-key-2', ..., 'your-key-673']  # List of keys
+async def main():
+    session = aioboto3.Session()
+    async with session.client('s3', region_name='your-region') as s3:
+        keys = ['your-key-1', 'your-key-2', 'your-key-673']  # Example list of keys
+        tasks = [fetch_document(s3, key) for key in keys]
+        documents = await asyncio.gather(*tasks)
+    return documents
 
-# Using ThreadPoolExecutor to fetch and process documents in parallel
-with ThreadPoolExecutor(max_workers=20) as executor:
-    future_to_key = {executor.submit(fetch_document, key): key for key in keys}
-    documents = []
-    for future in as_completed(future_to_key):
-        try:
-            document = future.result()
-            documents.append(document)
-        except Exception as exc:
-            print(f'Key {future_to_key[future]} generated an exception: {exc}')
-
-# documents now contains all your Document instances
+# Run the main coroutine
+if __name__ == "__main__":
+    documents = asyncio.run(main())
+    # Now documents contains all your Document instances
