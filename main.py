@@ -1,3 +1,4 @@
-import json
-
-parse_citations = lambda data: json.loads(data['citations']) if isinstance(data['citations'], str) else data['citations']
+extractor = Textractor(profile_name="default")
+tables_analysis_doc_object = extractor.start_document_analysis(f"Docs/{doc_name}",
+                                                  s3_upload_path=s3_upload_path,
+                                              features=[TextractFeatures.TABLES])
