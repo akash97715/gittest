@@ -1,20 +1,115 @@
-# Assuming you have an 'extractor' object that's configured to handle AWS Textract operations or a similar service
+import os
+import logging
 
-# Define parameters
-file_source = "s3://sbx-docinsight-ocr/[II_MANU_01_OUT_01]Odufalu FD MS OUTPUT.pdf"
-doc_name = "DocumentName"  # This will be used for saving files locally
-s3_upload_path = "s3://desired-upload-path/"
+# Set up basic configuration for logging
+logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
 
-# Create an instance of DocumentAnalyzer
-document_analyzer = DocumentAnalyzer(extractor=extractor, file_source=file_source, doc_name=doc_name, s3_upload_path=s3_upload_path)
+class DocumentAnalyzer:
+    def __init__(self, extractor, file_source, doc_name, s3_upload_path):
+        self.extractor = extractor
+        self.file_source = file_source
+        self.doc_name = doc_name
+        self.s3_upload_path = s3_upload_path
+        self.extracted_figures = []
+        self.extracted_tables = []
 
-# To extract figures from the document
-document_analyzer.extract_figures()
+    def start_analysis(self, features):
+        try:
+            return self.extractor.start_document_analysis(file_source=self.file_source,
+                                                          s3_upload_path=self.s3_upload_path,
+                                                          features=features)
+        except Exception as e:
+            logging.error("Failed to start document analysis: %s", e)
+            raise RuntimeError("Document analysis could not be started.") from e
 
-# To extract tables from the document
-document_analyzer.extract_tables()
+    def extract_figures(self):
+        try:
+            document = self.start_analysis([TextractFeatures.LAYOUT, TextractFeatures.TABLES])
+            for page in document.pages:
+                self._process_page_for_figures(page)
+        except Exception as e:
+            logging.error("Failed to extract figures: %s", e)
 
-# The results will be stored in `document_analyzer.extracted_figures` and `document_analyzer.extracted_tables`
-# You can access these lists to see the data or further process them
-print("Extracted Figures:", document_analyzer.extracted_figures)
-print("Extracted Tables:", document_analyzer.extracted_tables)
+    def _process_page_for_figures(self, page):
+        try:
+            figures_in_page = [layout for layout in page.layouts if layout.layout_type == 'LAYOUT_FIGURE']
+            if figures_in_page:
+                for index, figure in enumerate(figures_in_page):
+                    cropped_img = self._crop_image(page.image, figure.bbox, page.image.size)
+                    figure_path = self._save_cropped_image(cropped_img, "figures", f"page_{page.page_num}_figure_{index + 1}.png")
+                    figure_info = self._gather_figure_metadata(figure, figure_path, page.page_num)
+                    self.extracted_figures.append(figure_info)
+        except Exception as e:
+            logging.error("Failed to process page for figures: %s", e)
+
+    def extract_tables(self):
+        try:
+            document = self.start_analysis([TextractFeatures.TABLES])
+            for page in document.pages:
+                self._process_page_for_tables(page)
+        except Exception as e:
+            logging.error("Failed to extract tables: %s", e)
+
+    def _process_page_for_tables(self, page):
+        try:
+            if page.tables:
+                for index, table in enumerate(page.tables):
+                    cropped_img = self._crop_image(page.image, table.bbox, page.image.size)
+                    table_img_path = self._save_cropped_image(cropped_img, "tables/img", f"page_{page.page_num}_table_{index + 1}.png")
+                    table_data = self._gather_table_metadata(table, table_img_path, page.page_num)
+                    self.extracted_tables.append(table_data)
+        except Exception as e:
+            logging.error("Failed to process page for tables: %s", e)
+
+    def _crop_image(self, image, bbox, size):
+        try:
+            x, y, width, height = bbox.x * size[0], bbox.y * size[1], bbox.width * size[0], bbox.height * size[1]
+            return image.crop((x, y, x + width, y + height))
+        except Exception as e:
+            logging.error("Failed to crop image: %s", e)
+            raise
+
+    def _save_cropped_image(self, image, subdir, filename):
+        try:
+            path = os.path.join(self.doc_name, subdir)
+            if not os.path.exists(path):
+                os.makedirs(path)
+            image_path = os.path.join(path, filename)
+            image.save(image_path)
+            return image_path
+        except Exception as e:
+            logging.error("Failed to save cropped image: %s", e)
+            raise
+
+    def _gather_figure_metadata(self, figure, figure_path, page_num):
+        # This method should not raise an exception by itself, but handle unexpected cases
+        try:
+            return {
+                "document_name": self.doc_name,
+                "figure_id": figure.id,
+                "figure_name": os.path.basename(figure_path),
+                "figure_page": page_num,
+                "figure_confidence": figure.confidence,
+                "figure_bbox": figure.bbox,
+                "figure_height": figure.height,
+                "figure_width": figure.width,
+                "figure_x": figure.x,
+                "figure_y": figure.y,
+                "figure_path": figure_path
+            }
+        except Exception as e:
+            logging.error("Error gathering figure metadata: %s", e)
+            return None  # Optionally, could return an empty dict or raise
+
+    def _gather_table_metadata(self, table, table_img_path, page_num):
+        try:
+            column_headers = [cell.text for cell in table.table_cells if cell.is_column_header]
+            footers = [footer.text for footer in table.footers]
+            return {
+                # Gathered metadata
+            }
+        except Exception as e:
+            logging.error("Error gathering table metadata: %s", e)
+            return None  # Optionally, could return an empty dict or raise
+
+# Usage of the class remains the same as described earlier
