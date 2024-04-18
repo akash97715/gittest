@@ -1,1 +1,3 @@
-"citations": "[{\"filename\": \"Vichinsky_Phase 3 RCT of Voxelotor in SCD_NEJM_2019.pdf\", \"page\": 3, \"section\": \"\"}, {\"filename\": \"Vichinsky_Phase 3 RCT of Voxelotor in SCD_NEJM_2019.pdf\", \"page\": 1, \"section\": \"\"}, {\"filename\": \"Vichinsky_Phase 3 RCT of Voxelotor in SCD_NEJM_2019.pdf\", \"page\": 2, \"section\": \"\"}, {\"filename\": \"Vichinsky_Phase 3 RCT of Voxelotor in SCD_NEJM_2019.pdf\", \"page\": 4, \"section\": \"\"}, {\"filename\": \"Vichinsky_Phase 3 RCT of Voxelotor in SCD_NEJM_2019.pdf\", \"page\": 8, \"section\": \"\"}]"}
+import json
+
+parse_citations = lambda data: json.loads(data['citations']) if isinstance(data['citations'], str) else data['citations']
