@@ -1,7 +1,29 @@
-{'document_name': 'tobeingest', 'page_num': 1, 'page_full_text': 'Inflammatory Bowel Diseases, XXXX, XX, 1-12\n
-https://doi.org/10.1093/ibd/izad102\n
-Advance access publication 10 June 2023\n Original Research Articles - Clinical\n\r\n\r\nCROHN\'S\n &COLITIS\n FOUNDATION\n\r\n\r\nHealth Care Disparities, Social Determinants of Health,\n and Emotional Impacts in Patients with Ulcerative Colitis:\n Results from a Global Ulcerative Colitis Narrative Patient\n Survey\n\r\n\r\nFlorence-Damilola Odufalu, MD,* iD Marla C. Dubinsky, MD, t Laurent Peyrin-Biroulet, MD, PhD,\n Karoliina Ylänne, Allyson Sipes, Joseph C. Cappelleri, PhD, MPH, Il Leo J. Russo, PhD,*\n Michelle\nSegovia,\nPharmD,***ti.iD\nSean\nGardiner,\nMD,\nEdward\nP.\nJohnson,\n§§\nAmy Mulvey,\nand\n Remo Panaccione, MD\n\r\n\r\nFrom the *Keck School of Medicine of University of Southern California, Los Angeles, CA, USA\n +Susan and Leonard Feinstein IBD Center, Icahn School of Medicine at Mount Sinai, New York, NY, USA\n University of Lorraine, CHRU-Nancy, Department of Gastroenterology, F-54000 Nancy, France\n Sidekick Health, Kopavogur, Iceland\n 1Patient Representative, Columbia, SC, USA\n "Pfizer Inc, Groton, CT, USA\n **Pfizer Inc, Collegeville, PA, USA\n "Rutgers University, New Brunswick, NJ, USA\n #Pfizer Inc, New York, NY, USA\n SThe Harris Poll, San Antonio, TX, USA\n "The Harris Poll, Chicago, IL, USA\n "Division of Gastroenterology and Hepatology, Department of Medicine, University of Calgary, Calgary, AB, Canada\n ***University of Lorraine, Inserm, NGERE, F-54000 Nancy, France\n\r\n\r\nAddress correspondence to: Michelle Segovia, Pfizer Inc, 500 Arcola Road, Collegeville, PA, 19426, United States. Tel: 201-565-7358 (Michelle.\n SegoviaMedina@pfizer.com).\n\r\n\r\nBackground: The Ulcerative Colitis (UC) Narrative global survey assessed aspects of living with UC. This analysis aimed to identify health care\n disparities, social determinants of health, and emotional impacts related to UC disease management, patient experience, and quality of life.\n\r\n\r\nMethods: The survey was conducted by The Harris Poll from August 2017 to February 2018 among adults with UC. Responses from 1000\n patients in the United States, Canada, Japan, France, and Finland were analyzed based on patient income, employment status, educational level,\n age, sex, and psychological comorbidities. Odds ratios (ORs) with significant Pvalues (P<.05) from multivariate logistic regression models are\n reported.\n\r\n\r\nResults: Low-income vs high-income patients were less likely to have participated in a peer mentoring (OR, 0.30) or UC education program (OR,\n 0.51). Patients not employed were less likely to report being in "good/excellent" health (OR, 0.58) than patients employed full time. Patients\n with low vs high educational levels were less likely to have reached out to patient associations/organizations (OR, 0.59). Patients aged younger\n than 50 years vs those aged 50 years and older were less likely to have visited an office within an inflammatory bowel disease center/clinic in\n the past 12 months (OR, 0.53). Males were less likely to be currently seeing their gastroenterologist than females (OR, 0.66). Patients with vs\n without depression were less likely to agree that UC had made them more resilient (OR, 0.51).\n\r\n\r\nConclusions: Substantial differences in disease management and health care experience were identified, based on categories pertaining to\n patient demographics and psychological comorbidities, which may help health care providers better understand and advance health equity to\n improve patient care.\n\r\n\r\nLay Summary\n\r\n\r\nPatient-reported survey results revealed substantial differences in disease management and health care experience in patients with ulcerative\n colitis, based on categories pertaining to patient demographics and diagnosed psychological comorbidities, including income level, employment\n status, educational level, age, sex, depression, and anxiety.\n Key Words: ulcerative colitis, patient survey, social determinants of health, disease management, disparities\n\r\n\r\nReceived for publication: December 7, 2022. Editorial Decision: May 5, 2023\n © 2023 Crohn\'s & Colitis Foundation. Published by Oxford University Press on behalf of Crohn\'s & Colitis Foundation.\n This is an Open Access article distributed under the terms of the Creative Commons Attribution-NonCommercial License (
-https://creativecommons.org/\n
-licenses/by-nc/4.0/), which permits non-commercial re-use, distribution, and reproduction in any medium, provided the original work is properly cited. For\n commercial re-use, please contact journals.permissions@oup.com\n', 'text_layout_data': [{'layout_id': 'd57d701c-1e0d-42eb-b164-06382361e575',   'layout_name': 'page_1_layout_0',   'layout_reading_order': 0,   'layout_type': 'LAYOUT_HEADER',   'layout_text': 'Inflammatory Bowel Diseases, XXXX, XX, 1-12\n
-https://doi.org/10.1093/ibd/izad102\n
-Advance access publication 10 June 2023\n Original Research Articles - Clinical\n',    'layout_confidence': 0.66015625,   'layout_width': 0.24839866161346436,   'layout_height': 0.04943637177348137,   'layout_x': 0.08025678247213364,   'layout_y': 0.04156675562262535,   'layout_page': 1},  {'layout_id': '1a9fb751-ae27-4911-828e-2032a846bfc2',   'layout_name': 'page_1_layout_1',   'layout_reading_order': 2,   'layout_type': 'LAYOUT_HEADER',   'layout_text': "CROHN'S\n &COLITIS\n FOUNDATION\n",   'layout_confidence': 0.7890625,   'layout_width': 0.11542973667383194,   'layout_height': 0.04518497362732887,   'layout_x': 0.7757588624954224,   'layout_y': 0.05378396436572075,   'layout_page': 1},
+# Sample metadata and payload
+metadata_dict = {'doc_name': 'something', 'doc_md5': '14516542652'}
+payload = [
+    {'document_name': 'tobeingest', 'page_num': 1, 'page_full_text': 'Inflammatory Bowel Diseases, XXXX, XX, 1-12\n...'}
+    # Add other documents as needed
+]
+
+# Document class
+class Document:
+    def __init__(self, page_content, metadata):
+        self.page_content = page_content
+        self.metadata = metadata
+
+# Function to create a list of Document objects using list comprehension
+def create_documents_from_payload(payload, base_metadata):
+    return [
+        Document(
+            item['page_full_text'],
+            {**base_metadata, 'document_name': item['document_name'], 'page_number': item['page_num']}
+        ) for item in payload
+    ]
+
+# Create documents
+documents = create_documents_from_payload(payload, metadata_dict)
+
+# Output the documents (for demonstration)
+for doc in documents:
+    print(doc.page_content[:100])  # Print first 100 characters of page content for brevity
+    print(doc.metadata)            # Print metadata
