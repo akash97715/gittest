@@ -1,18 +1,46 @@
-# Replace these placeholder values with your actual parameters
-file_source = "s3://your-bucket/your-document.pdf"
-doc_name = "YourDocName"
-s3_upload_path = "s3://your-upload-path/"
-
-# Assuming `extractor` is an instance of a class with async methods that handle document analysis
-# Initialize the DocumentAnalyzer with your configured parameters
-document_analyzer = DocumentAnalyzer(extractor, file_source, doc_name, s3_upload_path)
-
-# To extract figures
-await document_analyzer.extract_figures()
-
-# To extract tables
-await document_analyzer.extract_tables()
-
-# Output the results to see what has been extracted
-print(document_analyzer.extracted_figures)
-print(document_analyzer.extracted_tables)
+document_text_layout = []
+ 
+# for every page extract text layouts with relevant metadata plus full page text
+for page in layout_analysis_doc_object.pages:
+ 
+    page_full_text = page.text  # will return also texted included in fugures and tables
+ 
+    text_layouts_extracted = []
+ 
+    for index, layout in enumerate(page.layouts):
+        if layout.layout_type != 'LAYOUT_FIGURE' and layout.layout_type != 'LAYOUT_TABLE':
+            layout_name = f'page_{layout.page}_layout_{index}'
+            layout_id = layout.id
+            layout_reading_order = layout.reading_order
+            layout_type = layout.layout_type
+            layout_text = layout.text
+            layout_conf = layout.confidence
+            layout_width = layout.width
+            layout_height = layout.height
+            layout_x = layout.x
+            layout_y = layout.y
+ 
+            layout_data = {
+                    "layout_id": layout_id,
+                    "layout_name": layout_name,
+                    "layout_reading_order": layout_reading_order,
+                    "layout_type": layout_type,
+                    "layout_text": layout_text,
+                    "layout_confidence": layout_conf,
+                    "layout_width": layout_width,
+                    'layout_height': layout_height,
+                    'layout_x': layout_x,
+                    'layout_y': layout_y,
+                    'layout_page': layout.page,
+                }
+ 
+        text_layouts_extracted.append(layout_data)
+ 
+    page_text_layout = {
+        "document_name": doc_name,
+        "page_num": page.page_num,
+        "page_full_text": page_full_text,
+        "text_layout_data": text_layouts_extracted
+    }
+ 
+    document_text_layout.append(page_text_layout)
