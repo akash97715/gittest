@@ -1,39 +1,20 @@
-# Define the sample data based on the provided list of dictionaries
-extracted_tables = [
-    {
-        'document_name': 'tobeingest',
-        'table_title': 'Table 1. Continued',
-        'footers': [
-            "Abbreviations: 5-ASAs, aminosalicylates; BEP; Baccalauréate Professionnel; CAD, Canadian dollars; CAP, Certificate d'Aptitude Professionelle; CEGEP, Collège d'enseignement général et professionnel; n, weighted number of patients with each characteristic; N, number of patients included in the analysis; SD, standard deviation; TNF, tumor necrosis factor; UC, ulcerative colitis; USD, United States dollars.",
-            '"Diagnosed condition; Question: "Have you personally been told by a doctor that you have any of the following health conditions? Please select all that apply" (Patient Survey Questions, Supplementary Data Content 6).',
-            'Patients with a "milder" form of the disease were defined as those who had ever taken a prescription medication for their UC...'
-        ],
-        'table_html': '<table><tr><th>Characteristics</th><th>Patients</th></tr><tr><td>Diagnosis of depression</td><td>147 (15%)</td></tr></table>'
-    },
-    {
-        'document_name': 'tobeingest',
-        'table_title': 'Table 1. Patient demographics',
-        'footers': [
-            "United States: job-specific training, some college but no degree...",
-            "Education levels...",
-            "Males were more likely to be employed than females..."
-        ],
-        'table_html': '<table><tr><th>Age</th><th>Patients</th></tr><tr><td>41</td><td>1000</td></tr></table>'
-    },
-    {
-        'document_name': 'tobeingest',
-        'table_title': 'B) Educational level',
-        'footers': [],
-        'table_html': '<table><tr><th>Not employed</th><th>Full time</th></tr><tr><td>Stopped treatment to start a family</td><td>0.11</td></tr></table>'
-    }
-]
+path="tobeingest/figures"
+def encode_image(image_path):
+    ''' Getting the base64 string '''
+    with open(image_path, "rb") as image_file:
+ 
+        return base64.b64encode(image_file.read()).decode('utf-8')
+# Store base64 encoded images
+img_base64_list = []
+ 
+# Store image summaries
+image_summaries = []
+for img_file in sorted(os.listdir(path)):
+    if img_file.endswith('.jpg'):
+        img_path = os.path.join(path, img_file)
+        base64_image = encode_image(img_path)
+        img_base64_list.append(base64_image)
+        image_summaries.append(image_summarize(base64_image,prompt))
 
-# Using list comprehensions to create both lists
-concatenated_list = [
-    f"{table['document_name']} {table.get('table_title', '')} {' '.join(table.get('footers', []))}".strip()
-    for table in extracted_tables
-]
 
-html_content_list = [table['table_html'] for table in extracted_tables]
-
-concatenated_list, html_content_list
+[{'document_name': 'tobeingest',  'figure_id': 'd02607d7-4682-4169-b54a-90616e997467',  'figure_name': 'page_6_figure_1.jpg',  'figure_page': 6,  'figure_confidence': 0.6298828125,  'figure_bbox': x: 0.20833560824394226, y: 0.8161853551864624, width: 0.197014681994915, height: 0.0221949340775609,  'figure_height': 0.0221949340775609,  'figure_width': 0.197014681994915,  'figure_x': 0.20833560824394226,  'figure_y': 0.8161853551864624,  'figure_path': 'tobeingest\\figures\\page_6_figure_1.jpg'}, {'document_name': 'tobeingest',  'figure_id': '225885e9-7277-4354-be7d-fd99a6bac1e5',  'figure_name': 'page_6_figure_2.jpg',  'figure_page': 6,  'figure_confidence': 0.82958984375,  'figure_bbox': x: 0.48349881172180176, y: 0.6204254031181335, width: 0.4356090724468231, height: 0.21089325845241547,  'figure_height': 0.21089325845241547,  'figure_width': 0.4356090724468231,  'figure_x': 0.48349881172180176,  'figure_y': 0.6204254031181335,  'figure_path': 'tobeingest\\figures\\page_6_figure_2.jpg'},
