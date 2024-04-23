@@ -12,15 +12,16 @@ class DocumentAnalyzer:
         self.extracted_tables = []
         self.document_text_layouts = []
         self.textractor = Textractor(profile_name="default")
-        self.document = None  # Hold the analyzed document
- 
+        self.document = None  # Hold the analyzed document once
+
     def start_analysis(self):
+        features = [TextractFeatures.LAYOUT, TextractFeatures.TABLES]
         try:
             print("===============================file sent for analysis", self.file_source)
             self.document = self.textractor.start_document_analysis(
                 file_source=self.file_source,
                 s3_upload_path=self.s3_upload_path,
-                features=[TextractFeatures.LAYOUT, TextractFeatures.TABLES]
+                features=features
             )
         except Exception as e:
             logging.error("Failed to start document analysis: %s", e)
@@ -64,12 +65,11 @@ class DocumentAnalyzer:
     def _process_page_for_text(self, page):
         page_full_text = page.text
         text_layouts_extracted = []
-
         for index, layout in enumerate(page.layouts):
             if layout.layout_type not in ['LAYOUT_FIGURE', 'LAYOUT_TABLE']:
                 layout_data = {
                     "layout_id": layout.id,
-                    "layout_name": f'page_{layout.page}_layout_{index}',
+                    "layout_name": f'page_{page.page}_layout_{index}',
                     "layout_reading_order": layout.reading_order,
                     "layout_type": layout.layout_type,
                     "layout_text": layout.text,
@@ -88,6 +88,57 @@ class DocumentAnalyzer:
             "page_full_text": page_full_text,
             "text_layout_data": text_layouts_extracted
         }
-
         self.document_text_layouts.append(page_text_layout)
 
+    def _crop_image(self, image, bbox, size):
+        x, y, width, height = bbox.x * size[0], bbox.y * size[1], bbox.width * size[0], bbox.height * size[1]
+        return image.crop((x, y, x + width, y + height))
+
+    def _save_cropped_image(self, image, subdir, filename):
+        path = os.path.join(self.doc_name, subdir)
+        if not os.path.exists(path):
+            os.makedirs(path)
+        image_path = os.path.join(path, filename)
+        image.save(image_path)
+        return image_path
+
+    def _gather_figure_metadata(self, figure, figure_path, page_num):
+        return {
+            "document_name": self.doc_name,
+            "figure_id": figure.id,
+            "figure_name": os.path.basename(figure_path),
+            "figure_page": page_num,
+            "figure_confidence": figure.confidence,
+            "figure_bbox": figure.bbox,
+            "figure_height": figure.height,
+            "figure_width": figure.width,
+            "figure_x": figure.x,
+            "figure_y": figure.y,
+            "figure_path": figure_path
+        }
+
+    def _gather_table_metadata(self, table, table_img_path, page_num):
+        column_headers = [cell.text for cell in table.table_cells if cell.is_column_header]
+        footers = [footer.text for footer in table.footers]
+        return {
+            "document_name": self.doc_name,
+            "table_id": table.id,
+            "table_name": os.path.basename(table_img_path),
+            "table_bbox": table.bbox,
+            "table_column_count": table.column_count,
+            "table_title": getattr(table.title, 'text', None),
+            "column_headers": column_headers,
+            "footers": footers,
+            "table_height": table.height,
+            "table_metadata": table.metadata,
+            "table_page_number": page_num,
+            "table_page_id": table.page_id,
+            "table_confidence": table.raw_object['Confidence'],
+            "table_row_count": table.row_count,
+            "table_img_path": table_img_path,
+            "table_html": table.to_html(),
+            "table_markdown": table.to_markdown(),
+            "table_width": table.width,
+            "table_x": table.x,
+            "table_y": table.y
+        }
