@@ -1,5 +1,18 @@
-(docinsightenv) D:\opensearchindexfix\vessel-services\docinsight>alembic revision --autogenerate -m "adding extra metadata column"
-INFO  [alembic.runtime.migration] Context impl PostgresqlImpl.
-INFO  [alembic.runtime.migration] Will assume transactional DDL.
-ERROR [alembic.util.messaging] Can't proceed with --autogenerate option; environment script D:\opensearchindexfix\vessel-services\docinsight\alembic\env.py does not provide a MetaData object or sequence of objects to the context.
-FAILED: Can't proceed with --autogenerate option; environment script D:\opensearchindexfix\vessel-services\docinsight\alembic\env.py does not provide a MetaData object or sequence of objects to the context.
+def upgrade() -> None:
+    pass
+ 
+ 
+def downgrade() -> None:
+    pass
+ 
+ 
+ 
+def upgrade() -> None:
+    op.add_column(
+        "data_ingestion_status_table",
+        sa.Column("chunked_as_parent_child", sa.Boolean, nullable=True),
+    )
+    op.execute("UPDATE data_ingestion_status_table SET chunked_as_parent_child=False WHERE chunked_as_parent_child is null")
+ 
+def downgrade() -> None:
+    op.drop_column("data_ingestion_status_table", "chunked_as_parent_child")
