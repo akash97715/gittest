@@ -1,36 +1,23 @@
+import logging
+
+class CustomTextractException(Exception):
+    """Exception class for errors in the textract processing pipeline."""
+    def __init__(self, error_type, original_exception):
+        super().__init__(f"{error_type} error: {str(original_exception)}")
+        self.original_exception = original_exception
+
+class Textractor:
     def load(self):
         try:
             self.extract_figures()
-        except Exception as e:
-            logging.error("Error extracting figures", exc_info=True)
-            raise FigureExtractionError from e
-   
-        try:
             self.extract_tables()
-        except Exception as e:
-            logging.error("Error extracting tables", exc_info=True)
-            raise TableExtractionError from e
-   
-        try:
             self.extract_raw_text()
-        except Exception as e:
-            logging.error("Error extracting raw text", exc_info=True)
-            raise TextExtractionError from e
-   
-        try:
             image_summary, image_uuid = self.ingest_image()
-        except Exception as e:
-            logging.error("Error ingesting image", exc_info=True)
-            raise ImageIngestionError from e
-   
-        try:
             table_summary, table_uuid = self.ingest_tables()
-        except Exception as e:
-            logging.error("Error ingesting tables", exc_info=True)
-            raise TableIngestionError from e
-   
-        try:
             raw_pages = self._custom_textract_text_loader()
         except Exception as e:
-            logging.error("Error loading text", exc_info=True)
-            raise TextLoadingError from e
+            error_type = e.__class__.__name__.replace("Error", "")
+            logging.error(f"Error during {error_type.lower()} process", exc_info=True)
+            raise CustomTextractException(error_type, e)
+
+# Assuming other methods are implemented elsewhere within the class.
