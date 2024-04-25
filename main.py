@@ -1,23 +1,16 @@
-import logging
-
-class CustomTextractException(Exception):
-    """Exception class for errors in the textract processing pipeline."""
-    def __init__(self, error_type, original_exception):
-        super().__init__(f"{error_type} error: {str(original_exception)}")
-        self.original_exception = original_exception
-
-class Textractor:
-    def load(self):
-        try:
-            self.extract_figures()
-            self.extract_tables()
-            self.extract_raw_text()
-            image_summary, image_uuid = self.ingest_image()
-            table_summary, table_uuid = self.ingest_tables()
-            raw_pages = self._custom_textract_text_loader()
-        except Exception as e:
-            error_type = e.__class__.__name__.replace("Error", "")
-            logging.error(f"Error during {error_type.lower()} process", exc_info=True)
-            raise CustomTextractException(error_type, e)
-
-# Assuming other methods are implemented elsewhere within the class.
+[2:04 PM] Deep, Akash (External)
+"""
+    Initializes the customer credentials needed to make calls to Textract using boto3 package internally.
+ 
+    :param profile_name: Customer's profile name as set in the ~/.aws/config file. This profile typically contains this format.
+                                :code:`[default]
+                                region = us-west-2
+                                output=json`
+    :type profile_name: str
+    :param region_name: If AWSCLI isn't setup, the user can pass region to let boto3 pick up credentials from the system.
+    :param region_name: str
+    :type profile_name: str, optional
+    :param kms_key_id: Customer's AWS KMS key (cryptographic key)
+    :type kms_key_id: str, optional
+[2:05 PM] Deep, Akash (External)
+Textractor(profile_name="default")
