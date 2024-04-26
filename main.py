@@ -1,41 +1,30 @@
----------------------------------------------------------------------------OSError                                   Traceback (most recent call last)Cell In[2],
-line 120
-   
-117
-figures_doc = doc_analyzer.analyze_document([TextractFeatures.LAYOUT])   
-119
-#doc_analyzer.extract_figures(figures_doc)-->
-120
-doc_analyzer.extract_tables(tables_doc) Cell In[2],
-line 51
-    
-49
-for page in doc_object.pages:    
-50
-     for table in page.tables:--->
-51
-         self.process_table(table, page) Cell In[2],
-line 57
-    
-55
-cropped_image = self.crop_image(page.image, table.bbox, page.image.size)    
-56
-table_img_path = f'{self.doc_name}/tables/img/{table_name}.png'--->
-57
-cropped_image.save(table_img_path)    
-59
-table_info = self.collect_table_info(table, table_name, table_img_path)    
-60
-self.tables.append(table_info) File
-d:\docinsightenv\Lib\site-packages\PIL\Image.py:2456
-, in Image.save(self, fp, format, **params)  
-2454
-         fp = builtins.open(filename, "r+b")  
-2455
-     else:->
-2456
-         fp = builtins.open(filename, "w+b")  
-2458
-try:  
-2459
-     save_handler(self, fp, filename) OSError: [Errno 22] Invalid argument: 'D:\\retreiver\\s3:\\sbx-docinsight-ocr\\[II_MANU_01_OUT_01]Odufalu FD MS OUTPUT.pdf\\tables\\img\\page_4_table_1.png'
+[11:10 PM] Deep, Akash (External)
+    def extract_tables(self, doc_object):
+        for page in doc_object.pages:
+            for table in page.tables:
+                self.process_table(table, page)
+ 
+    def process_table(self, table, page):
+        table_name = f'page_{page.page_num}_table_{len(self.tables) + 1}'
+        cropped_image = self.crop_image(page.image, table.bbox, page.image.size)
+        table_img_path = f'{self.doc_path}/tables/img/{table_name}.png'
+        cropped_image.save(table_img_path)
+ 
+        table_info = self.collect_table_info(table, table_name, table_img_path)
+        self.tables.append(table_info)
+ 
+        # Verify table layout by analyzing the cropped table image
+        self.verify_table_layout(cropped_image, table_info)
+ 
+    def verify_table_layout(self, cropped_image, table_info):
+        layout_doc = self.analyze_document([TextractFeatures.LAYOUT])
+        table_info['verification_layouts'] = [
+            {'type': layout.layout_type, 'confidence': layout.confidence} for layout in layout_doc.layouts
+        ]
+        self.validate_tables(table_info)
+[11:10 PM] Deep, Akash (External)
+    def analyze_document(self, features):
+        return self.extractor.start_document_analysis(
+            file_source=self.doc_name,
+            s3_upload_path=self.s3_upload_path,
+            features=features)
