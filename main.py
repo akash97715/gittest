@@ -1,28 +1,30 @@
-# fetch_doc_content/router.py
-from fastapi import APIRouter, Depends, Body, Query, HTTPException
-from typing import List, Dict, Optional
-from .controller import fetch_content_from_uuids_or_type
-from my_app.dependencies import async_token_validation_and_metering, get_db
+# fetch_doc_content/controller.py
+from typing import List, Optional
+from fastapi import HTTPException
+from sqlalchemy.orm import Session
 
-router = APIRouter()
+async def fetch_content_from_uuids_or_type(uuids: Optional[List[str]], content_type: Optional[str], request_id: Optional[str], db: Session):
+    if uuids is None:
+        # Fetch UUIDs based on content_type and request_id from the database
+        uuids = await fetch_uuids_from_db(content_type, request_id, db)
 
-@router.post(
-    "/fetch-content",
-    status_code=200,
-    tags=["Content Fetcher"],
-    description="This endpoint fetches content from S3 based on direct UUIDs or a combination of content type and request ID, returning the actual content.",
-    response_model=List[Dict[str, str]]
-)
-@async_token_validation_and_metering()
-async def fetch_content_endpoint(
-    uuids: Optional[List[str]] = Body(default=None, description="A list of UUIDs to fetch content for."),
-    content_type: Optional[str] = Query(default=None, description="Type of content to fetch: 'tables', 'images', or 'both'."),
-    request_id: Optional[str] = Query(default=None, description="Request ID associated with the content type."),
-    db=Depends(get_db)
-):
-    if (uuids is None and (content_type is None or request_id is None)) or (uuids and (content_type or request_id)):
-        raise HTTPException(
-            status_code=400,
-            detail="Either provide a list of UUIDs, or both content_type and request_id must be provided together."
-        )
-    return await fetch_content_from_uuids_or_type(uuids, content_type, request_id, db)
+    content_list = []
+    for uuid in uuids:
+        content = await get_s3_content(uuid)
+        if content is None:
+            raise HTTPException(
+                status_code=404,
+                detail=f"Content not found for UUID: {uuid}"
+            )
+        content_list.append({"uuid": uuid, "actual_content": content})
+    return content_list
+
+async def fetch_uuids_from_db(content_type: str, request_id: str, db: Session):
+    # Actual logic to fetch UUIDs based on content type and request ID from the database
+    # Placeholder for database query
+    # Example return:
+    return ["uuid-from-db-1", "uuid-from-db-2"]
+
+async def get_s3_content(uuid: str):
+    # Implement actual logic to fetch content from S3 using the UUID
+    return "Simulated content for UUID " + uuid
