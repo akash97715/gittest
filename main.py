@@ -15,21 +15,11 @@ async def fetch_content_from_type(content_type: Optional[str], db_data: Dict):
     if content_type in ["tables", "both"]:
         uuids.extend(db_data["tables"])  # Add all table UUIDs
 
-    content_list = await fetch_content_from_uuids(uuids)
-    return content_list
+    content_list = await get_s3_content(uuids)
+    return [{"uuid": uuid, "actual_content": content} for uuid, content in zip(uuids, content_list)]
 
-async def fetch_content_from_uuids(uuids: List[str]):
-    content_list = []
-    for uuid in uuids:
-        content = await get_s3_content(uuid)  # Simulate fetching content from S3 using the UUID
-        if content is None:
-            raise HTTPException(
-                status_code=404,
-                detail=f"Content not found for UUID: {uuid}"
-            )
-        content_list.append({"uuid": uuid, "actual_content": content})
-    return content_list
+async def get_s3_content(uuids: List[str]):
+    # This function now fetches content for a list of UUIDs in one go; replace with actual S3 fetching logic
+    # Simulate fetching multiple contents from S3 by returning a list with content for each UUID
+    return [f"Simulated content for UUID {uuid}" for uuid in uuids]
 
-async def get_s3_content(uuid: str):
-    # Simulated function to fetch content from S3; replace with actual S3 fetching logic
-    return f"Simulated content for UUID {uuid}"
