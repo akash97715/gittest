@@ -1,4 +1,4 @@
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends, HTTPException, Query, Body
 from sqlalchemy.orm import Session
 from .controller import ContentFetcher
 from validator.decorators import async_token_validation_and_metering
@@ -17,7 +17,9 @@ router = APIRouter()
 @async_token_validation_and_metering()
 async def fetch_content_endpoint(
     request: fastapi_request,
-    fetch_request: FetchContentRequest,  # Using the Pydantic model to parse and validate input
+    uuids_request: UUIDsRequest = Body(default=None),  # Using the Pydantic model for the body
+    content_type: Optional[str] = Query(default=None, description="Type of content to fetch: 'tables', 'images', or 'both'."),
+    request_id: Optional[str] = Query(default=None, description="Request ID associated with the content type."),
     db: Session = Depends(get_db)
 ):
     client_id = request.headers.get("x-agw-client_id")
@@ -27,11 +29,11 @@ async def fetch_content_endpoint(
         )  
     content_fetcher = ContentFetcher(db)  # Instantiate the ContentFetcher with the database session
     try:
-        # Using the attributes from the Pydantic model directly
+        # Passing parameters to the content fetcher function
         content_list = await content_fetcher.fetch_content_from_uuids_or_type(
-            fetch_request.uuids, 
-            fetch_request.content_type, 
-            fetch_request.request_id
+            uuids_request.uuids, 
+            content_type, 
+            request_id
         )
         return content_list
     except HTTPException as e:
