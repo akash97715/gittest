@@ -1,52 +1,8 @@
-async def get_ingestion_info(
-    request: fastapi_request,
-    db: Session = Depends(get_db),
-    request_id: Optional[str] = None,  # Add request_id as an optional parameter
-    page_limit: Optional[int] = 25,
-    page_number: Optional[int] = 1,
-    sort_order: Order_By = Order_By.ASC,
-    status: Optional[StatusList] = None,
-    is_file_deleted: Optional[bool] = None,
-):
-    try:
-        logger.info("Fetching client header")
-        client_id = request.headers.get("x-agw-client_id")
-
-        if not client_id:
-            raise HTTPException(
-                status_code=400, detail="Client Id is not sent in headers"
-            )
-
-        if request_id:  # Check if request_id is provided in the query
-            logger.info(f"Fetching record for request_id: {request_id}")
-            record = (
-                db.query(DataIngestionStatusTableNew)
-                .filter(DataIngestionStatusTableNew.request_id == request_id)
-                .first()
-            )
-            if record:
-                return IngestionInfoResponse(
-                    request_id=record.request_id,
-                    index=record.index,
-                    document_name=record.document,
-                    document_md5=record.document_md5,
-                    attached_metadata=record.attached_metadata,
-                    status=record.status,
-                    error_msg=record.error_message,
-                    is_file_deleted=record.is_file_deleted,
-                    created_ts=record.created_ts,
-                    queued_ts=record.queued_ts,
-                    inprogress_ts=record.inprogress_ts,
-                    completed_errored_ts=record.completed_errored_ts,
-                    modified_ts=record.modified_ts,
-                )
-            else:
-                raise HTTPException(
-                    status_code=404, detail="No record found with the provided request_id"
-                )
-
-        # Rest of your original code here to handle pagination and other filtering if no request_id is provided
-        # ...
-        
-    except Exception as e:
-        raise e
+[SQL: SELECT data_ingestion_status_table.client_id AS data_ingestion_status_table_client_id, data_ingestion_status_table.request_id AS data_ingestion_status_table_request_id, data_ingestion_status_table.index AS data_ingestion_status_table_index, data_ingestion_status_table.document AS data_ingestion_status_table_document, data_ingestion_status_table.document_md5 AS data_ingestion_status_table_document_md5, data_ingestion_status_table.attached_metadata AS data_ingestion_status_table_attached_metadata, data_ingestion_status_table.status AS data_ingestion_status_table_status, data_ingestion_status_table.error_message AS data_ingestion_status_table_error_message, data_ingestion_status_table.queued_ts AS data_ingestion_status_table_queued_ts, data_ingestion_status_table.inprogress_ts AS data_ingestion_status_table_inprogress_ts, data_ingestion_status_table.completed_errored_ts AS data_ingestion_status_table_completed_errored_ts, data_ingestion_status_table.vec_db_deletion_status AS data_ingestion_status_table_vec_db_deletion_status, data_ingestion_status_table.is_file_deleted AS data_ingestion_status_table_is_file_deleted, data_ingestion_status_table.table_figure_metadata AS data_ingestion_status_table_table_figure_metadata, data_ingestion_status_table.created_ts AS data_ingestion_status_table_created_ts, data_ingestion_status_table.modified_ts AS data_ingestion_status_table_modified_ts, data_ingestion_status_table.file_path AS data_ingestion_status_table_file_path, data_ingestion_status_table.chunked_as_parent_child AS data_ingestion_status_table_chunked_as_parent_child
+FROM data_ingestion_status_table
+WHERE data_ingestion_status_table.request_id = %(request_id_1)s::UUID
+LIMIT %(param_1)s]
+[parameters: {'request_id_1': UUID('f535dba3-c306-4fc6-bf99-41f362de3cb7'), 'param_1': 1}]
+(Background on this error at:
+https://sqlalche.me/e/20/f405)
+|
