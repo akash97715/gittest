@@ -1,24 +1,8 @@
-from fastapi import APIRouter, Depends, HTTPException
-from sqlalchemy.orm import Session
-from typing import List, Dict
-
-from app.langchain.database import get_db
-from app.langchain.content_fetcher import ContentFetcher  # Import the ContentFetcher class
-
-router = APIRouter()
-
-@router.post("/fetch-content", response_model=List[Dict[str, str]])
-async def fetch_content(
-    uuids: List[str] = None,
-    content_type: str = None,
-    request_id: str = None,
-    db: Session = Depends(get_db)
-):
-    content_fetcher = ContentFetcher(db)  # Instantiate the ContentFetcher with the database session
-    try:
-        content_list = await content_fetcher.fetch_content_from_uuids_or_type(uuids, content_type, request_id)
-        return content_list
-    except HTTPException as e:
-        # You can add more sophisticated error handling and logging here if needed
-        raise HTTPException(status_code=e.status_code, detail=e.detail)
-
+File "D:\docinsightenv\Lib\site-packages\fastapi\routing.py", line 222, in app
+    raise RequestValidationError(
+fastapi.exceptions.RequestValidationError: 1 validation error for Request
+body -> 128
+  Expecting property name enclosed in double quotes: line 3 column 1 (char 128) (type=value_error.jsondecode; msg=Expecting property name enclosed in double quotes; doc={
+   "uuids": ["885ba9df6be84f57b0fcd50b9220a9153612/dbc180e3778df3c74d6908991825eaa3/e5ee084a-8aae-4b14-a6fc-4c05f3b25a18"],
+}; pos=128; lineno=3; colno=1)
+|
