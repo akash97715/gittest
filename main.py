@@ -1,8 +1,10 @@
-[SQL: SELECT data_ingestion_status_table.client_id AS data_ingestion_status_table_client_id, data_ingestion_status_table.request_id AS data_ingestion_status_table_request_id, data_ingestion_status_table.index AS data_ingestion_status_table_index, data_ingestion_status_table.document AS data_ingestion_status_table_document, data_ingestion_status_table.document_md5 AS data_ingestion_status_table_document_md5, data_ingestion_status_table.attached_metadata AS data_ingestion_status_table_attached_metadata, data_ingestion_status_table.status AS data_ingestion_status_table_status, data_ingestion_status_table.error_message AS data_ingestion_status_table_error_message, data_ingestion_status_table.queued_ts AS data_ingestion_status_table_queued_ts, data_ingestion_status_table.inprogress_ts AS data_ingestion_status_table_inprogress_ts, data_ingestion_status_table.completed_errored_ts AS data_ingestion_status_table_completed_errored_ts, data_ingestion_status_table.vec_db_deletion_status AS data_ingestion_status_table_vec_db_deletion_status, data_ingestion_status_table.is_file_deleted AS data_ingestion_status_table_is_file_deleted, data_ingestion_status_table.table_figure_metadata AS data_ingestion_status_table_table_figure_metadata, data_ingestion_status_table.created_ts AS data_ingestion_status_table_created_ts, data_ingestion_status_table.modified_ts AS data_ingestion_status_table_modified_ts, data_ingestion_status_table.file_path AS data_ingestion_status_table_file_path, data_ingestion_status_table.chunked_as_parent_child AS data_ingestion_status_table_chunked_as_parent_child
-FROM data_ingestion_status_table
-WHERE data_ingestion_status_table.request_id = %(request_id_1)s::UUID
-LIMIT %(param_1)s]
-[parameters: {'request_id_1': UUID('f535dba3-c306-4fc6-bf99-41f362de3cb7'), 'param_1': 1}]
-(Background on this error at:
-https://sqlalche.me/e/20/f405)
-|
+return generic_exception_handler(exc, request)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "D:\opensearchindexfix\vessel-services\docinsight\app\utils\universal_exceptions.py", line 58, in generic_exception_handler
+    pre_formatted_exc = str(exc).replace("\n", "\r")
+                        ^^^^^^^^
+  File "pydantic\error_wrappers.py", line 71, in pydantic.error_wrappers.ValidationError.__str__
+  File "pydantic\error_wrappers.py", line 63, in pydantic.error_wrappers.ValidationError.errors
+  File "C:\Program Files\Python311\Lib\typing.py", line 1272, in __getattr__
+    raise AttributeError(attr)
+AttributeError: __pydantic_model__
