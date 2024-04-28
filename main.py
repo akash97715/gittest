@@ -1,40 +1,35 @@
-{
-        "images": [
-            "885ba9df6be84f57b0fcd50b9220a9153612/dbc180e3778df3c74d6908991825eaa3/5f2f9965-08bc-486b-9fe5-a834452baf75",
-            "885ba9df6be84f57b0fcd50b9220a9153612/dbc180e3778df3c74d6908991825eaa3/ef64cada-b61a-4d14-886d-461508c680e2",
-            "885ba9df6be84f57b0fcd50b9220a9153612/dbc180e3778df3c74d6908991825eaa3/2d01ae08-b457-476b-afd6-4c31df6ca6e8",
-            "885ba9df6be84f57b0fcd50b9220a9153612/dbc180e3778df3c74d6908991825eaa3/04cb5175-1d35-42e3-9ff6-cd97b9fc9d9e",
-            "885ba9df6be84f57b0fcd50b9220a9153612/dbc180e3778df3c74d6908991825eaa3/b29600eb-9875-4db8-add3-e74cc7d24219",
-            "885ba9df6be84f57b0fcd50b9220a9153612/dbc180e3778df3c74d6908991825eaa3/797c2da5-893e-4ed2-aaeb-e9eeaa1c7676",
-            "885ba9df6be84f57b0fcd50b9220a9153612/dbc180e3778df3c74d6908991825eaa3/972486cf-95eb-4bd9-83b1-510e0088134f"
-        ],
-        "tables": [
-            "885ba9df6be84f57b0fcd50b9220a9153612/dbc180e3778df3c74d6908991825eaa3/e5ee084a-8aae-4b14-a6fc-4c05f3b25a18",
-            "885ba9df6be84f57b0fcd50b9220a9153612/dbc180e3778df3c74d6908991825eaa3/d24b7454-edb4-4339-a4a1-b690529f2676",
-            "885ba9df6be84f57b0fcd50b9220a9153612/dbc180e3778df3c74d6908991825eaa3/54b7a62e-8753-4ee3-881b-2ba854de12dd",
-            "885ba9df6be84f57b0fcd50b9220a9153612/dbc180e3778df3c74d6908991825eaa3/c58f6e8c-d025-49ef-934e-337b9be8b252",
-            "885ba9df6be84f57b0fcd50b9220a9153612/dbc180e3778df3c74d6908991825eaa3/a63674f0-1233-4682-a23d-6c3fa84b6ad8",
-            "885ba9df6be84f57b0fcd50b9220a9153612/dbc180e3778df3c74d6908991825eaa3/f71b0dad-6e9a-470e-a04d-44a0cfe303ee",
-            "885ba9df6be84f57b0fcd50b9220a9153612/dbc180e3778df3c74d6908991825eaa3/82234ff7-145f-464b-b8a4-26f093f51435",
-            "885ba9df6be84f57b0fcd50b9220a9153612/dbc180e3778df3c74d6908991825eaa3/0c469a33-4534-40f2-b151-b6039ecbb7b4",
-            "885ba9df6be84f57b0fcd50b9220a9153612/dbc180e3778df3c74d6908991825eaa3/dd5de408-a4ee-4a3c-8bd4-a3cc2e8e3c8a",
-            "885ba9df6be84f57b0fcd50b9220a9153612/dbc180e3778df3c74d6908991825eaa3/f1f2420c-8590-487a-a708-d8575b5dbf5f",
-            "885ba9df6be84f57b0fcd50b9220a9153612/dbc180e3778df3c74d6908991825eaa3/3a62b7a9-c7ce-446e-9dfb-1e4fc302a60f",
-            "885ba9df6be84f57b0fcd50b9220a9153612/dbc180e3778df3c74d6908991825eaa3/6f37c3e0-639e-4e93-8d50-05d140bddcef"
-        ],
-        "metering_data": {
-            "totalPages": 23,
-            "totalTable": 20,
-            "advTableFilter": true
-        },
-        "extra_image_uuid": [
-            "885ba9df6be84f57b0fcd50b9220a9153612/dbc180e3778df3c74d6908991825eaa3/89c4aee8-1bbf-4c07-acac-1be493cacc97",
-            "885ba9df6be84f57b0fcd50b9220a9153612/dbc180e3778df3c74d6908991825eaa3/819d1045-aa29-4180-9809-6ea826f0bd0b",
-            "885ba9df6be84f57b0fcd50b9220a9153612/dbc180e3778df3c74d6908991825eaa3/c4d61d1a-199c-4686-9625-9495e0b4e6a3",
-            "885ba9df6be84f57b0fcd50b9220a9153612/dbc180e3778df3c74d6908991825eaa3/76aae500-bbc9-4902-8eff-7aba8ed248d0",
-            "885ba9df6be84f57b0fcd50b9220a9153612/dbc180e3778df3c74d6908991825eaa3/348e0099-6223-42f9-a2ac-feabd63303fd",
-            "885ba9df6be84f57b0fcd50b9220a9153612/dbc180e3778df3c74d6908991825eaa3/d8b36d61-47ed-42a9-8e8c-8efdf4171a7f",
-            "885ba9df6be84f57b0fcd50b9220a9153612/dbc180e3778df3c74d6908991825eaa3/49da433d-ff41-4f34-9b30-8c43290ea208",
-            "885ba9df6be84f57b0fcd50b9220a9153612/dbc180e3778df3c74d6908991825eaa3/b650d018-2240-4860-bb5d-d9b7f846e92d"
-        ]
-    }
+from typing import List, Dict, Optional
+from fastapi import HTTPException
+
+async def fetch_content_from_type(content_type: Optional[str], db_data: Dict):
+    if content_type not in ["images", "tables", "both"]:
+        raise HTTPException(
+            status_code=400,
+            detail=f"Invalid content type provided: {content_type}. Must be 'images', 'tables', or 'both'."
+        )
+    
+    uuids = []
+    if content_type in ["images", "both"]:
+        uuids.extend(db_data["images"])  # Add all image UUIDs
+        uuids.extend(db_data["extra_image_uuid"])  # Add extra image UUIDs
+    if content_type in ["tables", "both"]:
+        uuids.extend(db_data["tables"])  # Add all table UUIDs
+
+    content_list = await fetch_content_from_uuids(uuids)
+    return content_list
+
+async def fetch_content_from_uuids(uuids: List[str]):
+    content_list = []
+    for uuid in uuids:
+        content = await get_s3_content(uuid)  # Simulate fetching content from S3 using the UUID
+        if content is None:
+            raise HTTPException(
+                status_code=404,
+                detail=f"Content not found for UUID: {uuid}"
+            )
+        content_list.append({"uuid": uuid, "actual_content": content})
+    return content_list
+
+async def get_s3_content(uuid: str):
+    # Simulated function to fetch content from S3; replace with actual S3 fetching logic
+    return f"Simulated content for UUID {uuid}"
