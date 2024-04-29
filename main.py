@@ -1,10 +1,11 @@
+import aioboto3
 import asyncio
 import json
 from typing import List, Optional, Sequence
 
 class YourClass:
-    def __init__(self, session, bucket):
-        self.session = session
+    def __init__(self, bucket):
+        self.session = aioboto3.Session()
         self.bucket = bucket
 
     async def fetch_object(self, s3, key: str) -> Optional[Document]:
@@ -23,6 +24,7 @@ class YourClass:
         """
         Module to fetch multiple documents from S3 bucket using asyncio.gather.
         """
+        # Utilize the session to create an S3 client
         async with self.session.client("s3") as s3:
             # Gather all fetch tasks
             tasks = [self.fetch_object(s3, key) for key in keys]
