@@ -1,70 +1,48 @@
-from typing import List, Optional
-from fastapi import HTTPException
+# fetch_doc_content/router.py
+from fastapi import APIRouter, Depends, HTTPException
+from typing import List, Dict, Optional
+from .controller import ContentFetcher
 from sqlalchemy.orm import Session
-from app.langchain.models import DataIngestionStatusTableNew
-from app.langchain.s3_doc_store import S3DocStore
-import os
-
-# Assuming PARENT_CHUNKS_BUCKET_NAME is defined somewhere in your environment variables
-PARENT_CHUNKS_BUCKET_NAME = os.environ.get("PARENT_CHUNKS_BUCKET_NAME", "")
-
-class ContentFetcher:
-    def __init__(self, db: Session):
-        self.db = db
-        self.docstore = S3DocStore(PARENT_CHUNKS_BUCKET_NAME)
-
-    async def fetch_content_from_uuids_or_type(self, uuids: Optional[List[str]], content_type: Optional[str], request_id: Optional[str]):
-        received_metadata = await self.fetch_uuids_from_db(request_id)
-        db_uuids = []
-        metadata_list = []
-        
-        # Always fetch all metadata if no specific content type is provided
-        if content_type in ["images", "both"] or uuids is not None:
-            db_uuids.extend(received_metadata["images"])
-            db_uuids.extend(received_metadata["extra_image_uuid"])
-            metadata_list.extend(received_metadata["extra_image_data"])
-        if content_type in ["tables", "both"] or uuids is not None:
-            db_uuids.extend(received_metadata["tables"])
-            metadata_list.extend(received_metadata["extra_table_data"])
-
-        # If UUIDs are provided, filter these against the combined db_uuids from the DB
-        if uuids is not None:
-            uuids = [uuid for uuid in uuids if uuid in db_uuids]
-        else:
-            uuids = db_uuids
-
-        content_list = await self.fetch_content_from_uuids(uuids)
-        return self.append_metadata_to_content(content_list, metadata_list)
-
-    async def fetch_uuids_from_db(self, request_id: str):
-        record = (
-            self.db.query(DataIngestionStatusTableNew)
-            .filter(DataIngestionStatusTableNew.request_id == request_id)
-            .first()
+from validator.decorators import async_token_validation_and_metering
+from app.langchain.database import get_db
+from fastapi import Request as fastapi_request
+from fastapi import APIRouter, Depends, Body, Query, HTTPException
+from app.langchain.v1.models import  UUIDsRequest
+ 
+ 
+ 
+ 
+router = APIRouter()
+ 
+@router.post(
+    "/fetch-doc-content",
+    status_code=200,
+    tags=["Content Fetcher"],
+    description="This endpoint fetches content from S3 based on direct UUIDs or a combination of content type and request ID, returning the actual content.",
+    response_model=List[Dict]
+)
+@async_token_validation_and_metering()
+async def fetch_content_endpoint(
+    request: fastapi_request,
+    uuids_request: UUIDsRequest = Body(default=None),  # Using the Pydantic model for the body
+ 
+    db: Session = Depends(get_db)
+):
+    client_id = request.headers.get("x-agw-client_id")
+    if not client_id:
+        raise HTTPException(
+            status_code=400, detail="Client Id is not sent in headers"
+        )  
+    content_fetcher = ContentFetcher(db)  # Instantiate the ContentFetcher with the database session
+    uuids=uuids_request.contentuuidpath if uuids_request else None
+    try:
+        # Passing parameters to the content fetcher function
+        content_list = await content_fetcher.fetch_content_from_uuids_or_type(
+            uuids,
+            uuids_request.content_type,
+            uuids_request.request_id
         )
-        if not record:
-            raise HTTPException(
-                status_code=404,
-                detail=f"No record found for request_id: {request_id}"
-            )
-        return record.table_figure_metadata
-
-    async def fetch_content_from_uuids(self, uuids: List[str]):
-        content_list = await self.docstore.mmget(uuids)
-        if not content_list or any(c is None for c in content_list):
-            missing_uuids = [uuid for uuid, content in zip(uuids, content_list) if content is None]
-            raise HTTPException(
-                status_code=404,
-                detail=f"Content not found for UUIDs: {missing_uuids}"
-            )
-        return [{"uuid": uuid, "actual_content": content} for uuid, content in zip(uuids, content_list)]
-
-    def append_metadata_to_content(self, content_list, metadata_list):
-        # Mapping metadata to UUIDs
-        metadata_map = {meta['id_key']: meta for meta in metadata_list}
-        for item in content_list:
-            uuid = item['uuid']
-            # Append metadata to the content list where UUIDs match
-            if uuid in metadata_map:
-                item['metadata'] = metadata_map[uuid]
         return content_list
+    except HTTPException as e:
+        # More sophisticated error handling and logging could be added here
+        raise HTTPException(status_code=e.status_code, detail=e.detail)
