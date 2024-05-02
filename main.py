@@ -1,17 +1,26 @@
-async def fetch_content_from_uuids_or_type(self, uuids: Optional[List[str]], content_type: Optional[str], request_id: Optional[str]):
+from typing import Optional, List
+from fastapi import HTTPException
+
+class YourServiceClass:
+    # Assuming other necessary imports and class attributes are defined
+    
+    async def fetch_content_from_uuids_or_type(self, uuids: Optional[List[str]], content_type: Optional[str], request_id: Optional[str]):
         if uuids is None:
-            # Fetch UUIDs from the database if no UUIDs are provided
+            # Fetch UUIDs and metadata from the database if no UUIDs are provided
             received_metadata = await self.fetch_uuids_from_db(request_id)
             uuids = []
+            metadata_list = []
             if content_type in ["images", "both"]:
                 uuids.extend(received_metadata["images"])  # Add all image UUIDs
                 uuids.extend(received_metadata["extra_image_uuid"])  # Add extra image UUIDs
+                metadata_list.extend(received_metadata["extra_image_data"])
             if content_type in ["tables", "both"]:
                 uuids.extend(received_metadata["tables"])  # Add all table UUIDs
- 
+                metadata_list.extend(received_metadata["extra_table_data"])
+            
         content_list = await self.fetch_content_from_uuids(uuids)
-        return content_list
- 
+        return self.append_metadata_to_content(content_list, metadata_list)
+
     async def fetch_uuids_from_db(self, request_id: str):
         record = (
             self.db.query(DataIngestionStatusTableNew)
@@ -33,5 +42,15 @@ async def fetch_content_from_uuids_or_type(self, uuids: Optional[List[str]], con
                 status_code=404,
                 detail=f"Content not found for UUIDs: {missing_uuids}"
             )
-        print("CONTENT IS", content_list)
         return [{"uuid": uuid, "actual_content": content} for uuid, content in zip(uuids, content_list)]
+
+    def append_metadata_to_content(self, content_list, metadata_list):
+        # Mapping metadata to UUIDs
+        metadata_map = {meta['id_key']: meta for meta in metadata_list}
+        for item in content_list:
+            uuid = item['uuid']
+            # Append metadata to the content list where UUIDs match
+            if uuid in metadata_map:
+                item['metadata'] = metadata_map[uuid]
+        return content_list
+
