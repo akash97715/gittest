@@ -1,45 +1,37 @@
-# Sample data structure as provided earlier
-data = {
-    "images": [
-        "885ba9df6be84f57b0fcd50b9220a91536123/ae298e960dd36928c58a407fd87fbf8a/35390b40-ca06-4c19-84b1-d654454b497b",
-        # Additional images...
-    ],
-    "tables": [
-        "885ba9df6be84f57b0fcd50b9220a91536123/ae298e960dd36928c58a407fd87fbf8a/a910180c-c6bb-40cd-a5ab-c9aafec2cf95",
-        # Additional tables...
-    ],
-    "extra_image_data": [
-        # Extra image metadata entries...
-    ],
-    "extra_table_data": [
-        # Extra table metadata entries...
-    ]
-}
-
-# Function to find metadata for a given UUID from any extra data
-def find_metadata(uuid, extra_data_list):
-    for extra_data in extra_data_list:
-        for item in extra_data:
-            if item['id_key'] == uuid:
-                return item
-    return None
-
-# Create a list of images with their metadata
-image_metadata_list = []
-for image in data['images']:
-    metadata = find_metadata(image, [data['extra_image_data'], data['extra_table_data']])
-    if metadata:
-        image_metadata_list.append({'uuid': image, 'metadata': metadata})
-
-# Create a list of tables with their metadata
-table_metadata_list = []
-for table in data['tables']:
-    metadata = find_metadata(table, [data['extra_image_data'], data['extra_table_data']])
-    if metadata:
-        table_metadata_list.append({'uuid': table, 'metadata': metadata})
-
-# Combine both lists if needed or handle them separately
-combined_metadata_list = image_metadata_list + table_metadata_list
-
-# Output the combined list of dictionaries containing UUIDs and their metadata
-print(combined_metadata_list)
+async def fetch_content_from_uuids_or_type(self, uuids: Optional[List[str]], content_type: Optional[str], request_id: Optional[str]):
+        if uuids is None:
+            # Fetch UUIDs from the database if no UUIDs are provided
+            received_metadata = await self.fetch_uuids_from_db(request_id)
+            uuids = []
+            if content_type in ["images", "both"]:
+                uuids.extend(received_metadata["images"])  # Add all image UUIDs
+                uuids.extend(received_metadata["extra_image_uuid"])  # Add extra image UUIDs
+            if content_type in ["tables", "both"]:
+                uuids.extend(received_metadata["tables"])  # Add all table UUIDs
+ 
+        content_list = await self.fetch_content_from_uuids(uuids)
+        return content_list
+ 
+    async def fetch_uuids_from_db(self, request_id: str):
+        record = (
+            self.db.query(DataIngestionStatusTableNew)
+            .filter(DataIngestionStatusTableNew.request_id == request_id)
+            .first()
+        )
+        if not record:
+            raise HTTPException(
+                status_code=404,
+                detail=f"No record found for request_id: {request_id}"
+            )
+        return record.table_figure_metadata
+ 
+    async def fetch_content_from_uuids(self, uuids: List[str]):
+        content_list = await self.docstore.mmget(uuids)
+        if not content_list or any(c is None for c in content_list):
+            missing_uuids = [uuid for uuid, content in zip(uuids, content_list) if content is None]
+            raise HTTPException(
+                status_code=404,
+                detail=f"Content not found for UUIDs: {missing_uuids}"
+            )
+        print("CONTENT IS", content_list)
+        return [{"uuid": uuid, "actual_content": content} for uuid, content in zip(uuids, content_list)]
