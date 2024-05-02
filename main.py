@@ -15,22 +15,23 @@ class ContentFetcher:
 
     async def fetch_content_from_uuids_or_type(self, uuids: Optional[List[str]], content_type: Optional[str], request_id: Optional[str]):
         received_metadata = await self.fetch_uuids_from_db(request_id)
-        all_uuids = []
+        db_uuids = []
         metadata_list = []
         
-        if content_type in ["images", "both"]:
-            all_uuids.extend(received_metadata["images"])  # Add all image UUIDs
-            all_uuids.extend(received_metadata["extra_image_uuid"])  # Add extra image UUIDs
+        # Always fetch all metadata if no specific content type is provided
+        if content_type in ["images", "both"] or uuids is not None:
+            db_uuids.extend(received_metadata["images"])
+            db_uuids.extend(received_metadata["extra_image_uuid"])
             metadata_list.extend(received_metadata["extra_image_data"])
-        if content_type in ["tables", "both"]:
-            all_uuids.extend(received_metadata["tables"])  # Add all table UUIDs
+        if content_type in ["tables", "both"] or uuids is not None:
+            db_uuids.extend(received_metadata["tables"])
             metadata_list.extend(received_metadata["extra_table_data"])
-        
+
+        # If UUIDs are provided, filter these against the combined db_uuids from the DB
         if uuids is not None:
-            # Filter the provided UUIDs against the all_uuids from the DB
-            uuids = [uuid for uuid in uuids if uuid in all_uuids]
+            uuids = [uuid for uuid in uuids if uuid in db_uuids]
         else:
-            uuids = all_uuids
+            uuids = db_uuids
 
         content_list = await self.fetch_content_from_uuids(uuids)
         return self.append_metadata_to_content(content_list, metadata_list)
