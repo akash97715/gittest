@@ -1,48 +1,107 @@
-# fetch_doc_content/router.py
-from fastapi import APIRouter, Depends, HTTPException
-from typing import List, Dict, Optional
-from .controller import ContentFetcher
-from sqlalchemy.orm import Session
-from validator.decorators import async_token_validation_and_metering
-from app.langchain.database import get_db
-from fastapi import Request as fastapi_request
-from fastapi import APIRouter, Depends, Body, Query, HTTPException
-from app.langchain.v1.models import  UUIDsRequest
- 
- 
- 
- 
-router = APIRouter()
- 
-@router.post(
-    "/fetch-doc-content",
-    status_code=200,
-    tags=["Content Fetcher"],
-    description="This endpoint fetches content from S3 based on direct UUIDs or a combination of content type and request ID, returning the actual content.",
-    response_model=List[Dict]
-)
-@async_token_validation_and_metering()
-async def fetch_content_endpoint(
-    request: fastapi_request,
-    uuids_request: UUIDsRequest = Body(default=None),  # Using the Pydantic model for the body
- 
-    db: Session = Depends(get_db)
-):
-    client_id = request.headers.get("x-agw-client_id")
-    if not client_id:
-        raise HTTPException(
-            status_code=400, detail="Client Id is not sent in headers"
-        )  
-    content_fetcher = ContentFetcher(db)  # Instantiate the ContentFetcher with the database session
-    uuids=uuids_request.contentuuidpath if uuids_request else None
-    try:
-        # Passing parameters to the content fetcher function
-        content_list = await content_fetcher.fetch_content_from_uuids_or_type(
-            uuids,
-            uuids_request.content_type,
-            uuids_request.request_id
-        )
-        return content_list
-    except HTTPException as e:
-        # More sophisticated error handling and logging could be added here
-        raise HTTPException(status_code=e.status_code, detail=e.detail)
+aiohttp==3.9.0
+aiosignal==1.3.1
+anyio==3.7.1
+aioboto3==12.4.0
+async-timeout==4.0.2
+attrs==23.1.0
+blis==0.7.9
+catalogue==2.0.8
+certifi==2023.7.22
+charset-normalizer==3.2.0
+click==8.1.5
+colorama==0.4.6
+confection==0.1.0
+cymem==2.0.7
+dataclasses-json==0.5.12
+elastic-transport==8.4.0
+elasticsearch==8.8.2
+et-xmlfile==1.1.0
+exceptiongroup==1.1.3
+frozenlist==1.4.0
+greenlet==2.0.2
+h11==0.14.0
+idna==3.4
+Jinja2==3.1.2
+langchain==0.1.8
+langchain-experimental==0.0.53
+langcodes==3.3.0
+langsmith==0.1.0
+MarkupSafe==2.1.3
+marshmallow==3.19.0
+multidict==6.0.4
+murmurhash==1.0.9
+mypy-extensions==1.0.0
+numexpr==2.8.4
+numpy==1.25.1
+openpyxl==3.1.2
+opensearch-py==2.4.2
+packaging==23.2
+pathspec==0.11.1
+pathy==0.10.2
+platformdirs==3.9.1
+preshed==3.0.8
+pyarrow==15.0.1
+pydantic==1.10.11
+pypdf==4.0.0
+psycopg2-binary==2.9.6
+PyYAML==6.0.1
+regex==2023.6.3
+requests==2.31.0
+six==1.16.0
+smart-open==6.3.0
+sniffio==1.3.0
+spacy==3.6.0
+spacy-legacy==3.0.12
+spacy-loggers==1.0.4
+SQLAlchemy==2.0.19
+srsly==2.4.7
+starlette==0.27.0
+tenacity==8.2.2
+thinc==8.1.10
+tiktoken==0.4.0
+tomli==2.0.1
+tqdm==4.65.0
+typer==0.9.0
+typing-inspect==0.9.0
+typing_extensions==4.7.1
+urllib3==1.26.18
+wasabi==1.1.2
+yarl==1.9.2
+loguru==0.7.0
+fastapi==0.98.0
+hypercorn==0.14.4
+psycopg2-binary==2.9.6
+boto3==1.34.63
+XlsxWriter==3.1.2
+APScheduler==3.10.1
+botocore==1.34.63
+httpx==0.24.1
+cachetools==5.3.1
+uvicorn==0.22.0
+fastapi-cache2==0.2.1
+redis==4.5.5
+async-cache==1.1.1
+cache==1.0.3
+python-dotenv==1.0.0
+loguru==0.7.0
+fastapi-pagination==0.12.6
+black==23.7.0
+flake8==6.0.0
+python-multipart==0.0.6
+unstructured==0.11.6
+python-docx==1.1.0
+python-pptx==0.6.23
+pycryptodome==3.17
+backoff==2.2.1
+alembic==1.12.1
+rapidocr-onnxruntime==1.2.13
+transformers==4.35.2
+SQLAlchemy-Utils==0.41.1
+amazon-textract-caller==0.2.3
+amazon-textract-textractor==1.7.9
+pandas==2.0.1
+openai==1.13.3
+networkx==3.2.1
+pdf2image==1.17.0
+xlrd==2.0.1
+PyPDF2==3.0.1
