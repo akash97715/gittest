@@ -1,1 +1,6 @@
-if not content_list or any(c is None for c in content_list):
+GET _search
+{
+  "query": {
+    "metadata.request_id": "4547d927-df8b-45ea-bb69-f2578f89d5c6"
+  }
+}
