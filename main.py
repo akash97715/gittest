@@ -1,21 +1,30 @@
-# Example data to update
-data = [
-    { "update": { "_id": "1", "_index": "example_index" }},
-    { "doc": { "field_to_update": "new_value" }},
-    { "update": { "_id": "2", "_index": "example_index" }},
-    { "doc": { "field_to_update": "another_new_value" }}
-]
+const getToken = async () => {
+    const clientId = pm.environment.get("client_id");
+    const clientSecret = pm.environment.get("client_secret");
+    const url = pm.environment.get("pingFederateURL");
 
+    const requestOptions = {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/x-www-form-urlencoded'
+        },
+        body: `grant_type=client_credentials&client_id=${clientId}&client_secret=${clientSecret}`,
+        ignoreErrors: true
+    };
 
+    pm.sendRequest(url, requestOptions, function(err, response) {
+        if (err) {
+            console.log(err);
+        } else {
+            const jsonResponse = response.json();
+            pm.environment.set("token", jsonResponse.access_token);
+        }
+    });
+};
 
-from opensearchpy.helpers import bulk
-
-# Function to format the data for the bulk API
-def generate_bulk_data(data):
-    for item in data:
-        yield item
-
-# Performing the bulk update
-success, failed = bulk(client, generate_bulk_data(data))
-
-print(f"Successfully updated {success} documents, {failed} failed.")
+if (!pm.environment.get("token")) {
+    console.log("Fetching new token...");
+    getToken();
+} else {
+    console.log("Token already set.");
+}
