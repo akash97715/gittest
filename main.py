@@ -1,55 +1,46 @@
-const getToken = async () => {
+// Function to fetch the token
+function getToken() {
+    const url = 'https://devfederate.pfizer.com/as/token.oauth2?grant_type=client_credentials';
     const clientId = pm.environment.get("client_id");
     const clientSecret = pm.environment.get("client_secret");
-    const url = 'https://devfederate.pfizer.com/as/token.oauth2?grant_type=client_credentials';
 
-    const requestOptions = {
-        method: 'POST',
-        headers: {
-            'x-agw-client_id': clientId, // Assuming the API expects this custom header
-            'Content-Type': 'application/x-www-form-urlencoded',
-            'Cookie': 'PF=qNshxyONTlOl0D6uEsTDHw'  // Ensure this cookie is still valid and required
-        },
-        body: `client_id=${encodeURIComponent(clientId)}&client_secret=${encodeURIComponent(clientSecret)}`,
-        ignoreErrors: true
+    const headers = {
+        'x-agw-client_id': clientId,
+        'Content-Type': 'application/x-www-form-urlencoded',
+        'Cookie': 'PF=qNshxyONTlOl0D6uEsTDHw'
     };
 
-    return new Promise((resolve, reject) => {
-        pm.sendRequest(url, requestOptions, async (err, response) => {
-            if (err) {
-                console.error("Request failed with error:", err);
-                reject(err);
-            } else if (!response.ok) {
-                const responseBody = await response.text();  // Get the full response body
-                console.error("Failed to get token, status:", response.status, "Response body:", responseBody);
-                reject(new Error('Failed to get token'));
-            } else {
-                try {
-                    const jsonResponse = await response.json();
-                    pm.environment.set("token", jsonResponse.access_token);
-                    console.log("Token fetched and set successfully:", jsonResponse.access_token);
-                    resolve(jsonResponse.access_token);
-                } catch (jsonError) {
-                    console.error("Failed to parse JSON response:", jsonError);
-                    reject(jsonError);
-                }
-            }
-        });
-    });
-};
+    const body = {
+        'client_id': clientId,
+        'client_secret': clientSecret
+    };
 
-const checkAndFetchToken = async () => {
-    if (!pm.environment.get("token")) {
-        console.log("Fetching new token...");
-        try {
-            const token = await getToken();
-            console.log("Token received:", token);
-        } catch (error) {
-            console.error("Error fetching token:", error);
+    pm.sendRequest({
+        url: url,
+        method: 'POST',
+        header: headers,
+        body: {
+            mode: 'urlencoded',
+            urlencoded: Object.keys(body).map(key => ({key, value: body[key]}))
         }
-    } else {
-        console.log("Using existing token:", pm.environment.get("token"));
-    }
-};
+    }, (err, res) => {
+        if (err) {
+            console.error("Error fetching token:", err);
+        } else {
+            const jsonResponse = res.json();
+            if (res.code === 200) {
+                pm.environment.set("access_token", jsonResponse.access_token);
+            } else {
+                console.error("Failed to fetch token:", jsonResponse);
+            }
+        }
+    });
+}
 
-checkAndFetchToken();
+// Check if the access_token is already available and not expired
+if (!pm.environment.get("access_token")) {
+    console.log("Fetching new access token...");
+    getToken();
+} else {
+    console.log("Using stored access token.");
+}
