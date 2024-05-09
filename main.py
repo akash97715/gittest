@@ -48,9 +48,5 @@ if (region === 'amer') {
     tokenUrl = pm.environment.get("eupingfedrate");
 }
 
-if (!pm.environment.get("access_token")) {
-    console.log("Fetching new access token...");
-    getToken(clientId, clientSecret, tokenUrl);
-} else {
-    console.log("Using stored access token.");
-}
+console.log("Fetching new access token...");
+getToken(clientId, clientSecret, tokenUrl);
