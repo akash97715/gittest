@@ -12,4 +12,4 @@
 <img width="685" alt="Screenshot 2024-04-17 at 6 12 15 PM" src="https://github.com/akash97715/gittest/assets/34799343/8fac35f3-b115-423c-b3f7-3d2086e975f6">
 
 
-![image](https://github.com/akash97715/gittest/assets/34799343/8d979089-4f9e-48e4-9b13-233e4be9ea51)
+
