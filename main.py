@@ -1,5 +1,9 @@
-if self.advance_table_filter:
-    await self._verify_table_layout(cropped_image, table_info)
-else:
-    action = (self.extracted_tables.append(doclist), "higher")[1] if doclist['table_confidence'] > self.table_threshold_score else (self.extracted_figures.append(doclist), "lower")[1]
-    print(f"Processed TABLE INFORMATION: 1 table {action} than threshold")
+    def append_metadata_to_content(self, content_list, metadata_list):
+        # Mapping metadata to UUIDs
+        metadata_map = {meta['docinsight_custom_extraction_id_key']: meta for meta in metadata_list}
+        for item in content_list:
+            uuid = item['uuid']
+            # Append metadata to the content list where UUIDs match
+            if uuid in metadata_map:
+                item['metadata'] = metadata_map[uuid]
+        return content_list
