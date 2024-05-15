@@ -1,6 +1,5 @@
 fields @timestamp, @message, @logStream, @log
 | filter @message like /localhost/ and @message like /textract/
-| parse @timestamp "*T*:*:*.*+05:30" as date, time, rest
-| filter time >= '12:46:00' and time <= '12:48:00'
+| filter @timestamp >= '2024-05-15T07:16:00.000Z' and @timestamp <= '2024-05-15T07:18:00.000Z'
 | sort @timestamp desc
 | limit 1000
