@@ -24,6 +24,19 @@ class PptxToPdfConverter:
         image = Image.open(image_stream)
         return image
 
+    def draw_table(self, pdf_canvas, table, x, y):
+        num_rows = len(table.rows)
+        num_cols = len(table.columns)
+        cell_width = 500 / num_cols  # Adjust the width as needed
+        cell_height = 20  # Fixed cell height
+
+        for row_idx, row in enumerate(table.rows):
+            for col_idx, cell in enumerate(row.cells):
+                cell_text = cell.text
+                cell_x = x + col_idx * cell_width
+                cell_y = y - row_idx * cell_height
+                self.draw_text(pdf_canvas, cell_text, cell_x, cell_y, font_size=10)
+
     def pptx_to_pdf(self):
         prs = Presentation(self.pptx_path)
         pdf_canvas = canvas.Canvas(self.pdf_path, pagesize=landscape(letter))
@@ -51,6 +64,15 @@ class PptxToPdfConverter:
                     img_height_pdf = img_width_pdf * aspect_ratio
                     self.draw_image(pdf_canvas, image, 40, y_position - img_height_pdf, width=img_width_pdf, height=img_height_pdf)
                     y_position -= img_height_pdf + 20  # Adjust y_position after drawing the image
+
+                    if y_position < 40:  # Check if Y position is out of the page
+                        pdf_canvas.showPage()  # Add a new page
+                        y_position = landscape(letter)[1] - 40  # Reset Y position for new page
+
+                if shape.shape_type == 19:  # 19 corresponds to table shape type
+                    table = shape.table
+                    self.draw_table(pdf_canvas, table, 40, y_position)
+                    y_position -= len(table.rows) * 20 + 20  # Adjust y_position after drawing the table
 
                     if y_position < 40:  # Check if Y position is out of the page
                         pdf_canvas.showPage()  # Add a new page
