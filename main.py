@@ -1,28 +1,3 @@
-from pptx import Presentation
-from reportlab.pdfgen import canvas
-from reportlab.lib.pagesizes import letter
-from PIL import Image
-import io
-
-def pptx_to_pdf(pptx_path, pdf_path):
-    prs = Presentation(pptx_path)
-    pdf_canvas = canvas.Canvas(pdf_path, pagesize=letter)
-
-    for slide_number, slide in enumerate(prs.slides):
-        # Create a blank image to draw the slide on
-        slide_image = Image.new('RGB', (int(letter[0]), int(letter[1])), 'white')
-        slide_io = io.BytesIO()
-        slide_image.save(slide_io, format='PNG')
-        slide_io.seek(0)
-        
-        # Draw slide content
-        pdf_canvas.drawImage(slide_io, 0, 0, width=letter[0], height=letter[1])
-
-        if slide_number < len(prs.slides) - 1:
-            pdf_canvas.showPage()
-
-    pdf_canvas.save()
-
-pptx_path = 'your_presentation.pptx'
-pdf_path = 'output.pdf'
-pptx_to_pdf(pptx_path, pdf_path)
+27 pptx_to_pdf(pptx_path, pdf_path) Cell In[2], line 18     16 slide_io.seek(0)     17 # Draw slide content---> 18 pdf_canvas.drawImage(slide_io, 0, 0, width=letter[0], height=letter[1])     20 if slide_number < len(prs.slides) - 1:     21     pdf_canvas.showPage() File d:\docinsightenv\Lib\site-packages\reportlab\pdfgen\canvas.py:1002, in Canvas.drawImage(self, image, x, y, width, height, mask, preserveAspectRatio, anchor, anchorAtXY, showBoundary, extraReturn)    999 imgObj = self._doc.idToObject.get(regName, None)   1000 if not imgObj:   1001     #first time seen, create and register the PDFImageXobject-> 1002     imgObj = pdfdoc.PDFImageXObject(name, image, mask=mask)   1003     imgObj.name = name   1004     self._setXObjects(imgObj) File d:\docinsightenv\Lib\site-packages\reportlab\pdfbase\pdfdoc.py:2079, in PDFImageXObject.__init__(self, name, source, mask)   2076 else:   2077     # it is a filename
+...
+   2081     try: File <frozen ntpath>:230, in splitext(p)  TypeError: expected str, bytes or os.PathLike object, not BytesIO
