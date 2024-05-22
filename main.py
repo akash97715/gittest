@@ -1,89 +1,58 @@
-from pptx import Presentation
-from reportlab.pdfgen import canvas
-from reportlab.lib.pagesizes import letter, landscape
-from reportlab.lib.utils import ImageReader
-from PIL import Image
-import io
+what is add provisioned concurrency and how it works, assume i have set this value to 200. and i have 10000 request to process. explain me how my 10000 request will execute step by step pls
+ChatGPT
+Provisioned Concurrency is a feature provided by AWS Lambda that allows you to pre-warm a specific number of Lambda instances, reducing the latency associated with cold starts. When you set Provisioned Concurrency to a certain number, AWS keeps that many instances of your function initialized and ready to handle requests.
 
-class PptxToPdfConverter:
-    def __init__(self, pptx_path, pdf_path):
-        self.pptx_path = pptx_path
-        self.pdf_path = pdf_path
+Here's a step-by-step explanation of how your 10,000 requests will be processed if you set Provisioned Concurrency to 200:
 
-    def draw_text(self, pdf_canvas, text, x, y, font_size=12):
-        pdf_canvas.setFont("Helvetica", font_size)
-        text_object = pdf_canvas.beginText(x, y)
-        text_object.textLine(text)
-        pdf_canvas.drawText(text_object)
+Setting Up Provisioned Concurrency
+Provisioned Concurrency Configuration:
+When you configure Provisioned Concurrency to 200, AWS Lambda will initialize 200 instances of your Lambda function and keep them running and ready to handle requests.
+Handling 10,000 Requests
+Let's break down how the 10,000 requests are processed:
 
-    def draw_image(self, pdf_canvas, image, x, y, width, height):
-        pdf_canvas.drawImage(ImageReader(image), x, y, width=width, height=height)
+Initial Burst:
 
-    def extract_images(self, shape):
-        image_stream = io.BytesIO(shape.image.blob)
-        image = Image.open(image_stream)
-        return image
+The first 200 requests are immediately handled by the pre-warmed instances due to Provisioned Concurrency.
+These requests experience very low latency since the instances are already initialized.
+Handling Concurrent Requests:
 
-    def draw_table(self, pdf_canvas, table, x, y):
-        num_rows = len(table.rows)
-        num_cols = len(table.columns)
-        cell_width = 500 / num_cols  # Adjust the width as needed
-        cell_height = 20  # Fixed cell height
+The next batch of requests (from 201 to 10,000) will be queued and handled as soon as any of the provisioned instances become available.
+The AWS Lambda service will scale out additional instances to handle the burst of traffic, up to the configured concurrency limit (which includes both Provisioned and On-Demand concurrency).
+Scaling with On-Demand Instances:
 
-        for row_idx, row in enumerate(table.rows):
-            for col_idx, cell in enumerate(row.cells):
-                cell_text = cell.text
-                cell_x = x + col_idx * cell_width
-                cell_y = y - row_idx * cell_height
-                self.draw_text(pdf_canvas, cell_text, cell_x, cell_y, font_size=10)
+While the first 200 requests are handled by the provisioned instances, AWS Lambda starts to initialize additional instances on-demand to manage the load.
+These additional instances may experience cold start latency if they are being initialized for the first time.
+Continuous Execution:
 
-    def pptx_to_pdf(self):
-        prs = Presentation(self.pptx_path)
-        pdf_canvas = canvas.Canvas(self.pdf_path, pagesize=landscape(letter))
-        
-        for slide_number, slide in enumerate(prs.slides):
-            y_position = landscape(letter)[1] - 40  # Start from top of the page
+As more instances become available (both provisioned and on-demand), the subsequent requests will be handled by these instances.
+AWS Lambda will continue to scale up to meet the demand, subject to the regional concurrency limits and any limits you have set on your account.
+Example Execution Flow
+Let's illustrate this with an example:
 
-            for shape in slide.shapes:
-                if hasattr(shape, "text_frame") and shape.text_frame is not None:
-                    for paragraph in shape.text_frame.paragraphs:
-                        text = "".join([run.text for run in paragraph.runs])
-                        if text.strip():  # Check if there is any text to draw
-                            self.draw_text(pdf_canvas, text, 40, y_position, font_size=12)
-                            y_position -= 20  # Move to the next line
+Requests 1 to 200:
 
-                            if y_position < 40:  # Check if Y position is out of the page
-                                pdf_canvas.showPage()  # Add a new page
-                                y_position = landscape(letter)[1] - 40  # Reset Y position for new page
-                
-                if hasattr(shape, "image"):
-                    image = self.extract_images(shape)
-                    img_width, img_height = image.size
-                    aspect_ratio = img_height / img_width
-                    img_width_pdf = 400  # Arbitrary width to fit the image
-                    img_height_pdf = img_width_pdf * aspect_ratio
-                    self.draw_image(pdf_canvas, image, 40, y_position - img_height_pdf, width=img_width_pdf, height=img_height_pdf)
-                    y_position -= img_height_pdf + 20  # Adjust y_position after drawing the image
+These requests are processed by the 200 provisioned instances.
+The latency is minimal because the instances are already warm.
+Requests 201 to 300:
 
-                    if y_position < 40:  # Check if Y position is out of the page
-                        pdf_canvas.showPage()  # Add a new page
-                        y_position = landscape(letter)[1] - 40  # Reset Y position for new page
+These requests are initially queued.
+Some may be processed by the first 200 provisioned instances as they finish processing the initial requests.
+AWS Lambda starts to initialize additional on-demand instances to handle these requests.
+Requests 301 to 10,000:
 
-                if shape.shape_type == 19:  # 19 corresponds to table shape type
-                    table = shape.table
-                    self.draw_table(pdf_canvas, table, 40, y_position)
-                    y_position -= len(table.rows) * 20 + 20  # Adjust y_position after drawing the table
+These requests continue to be processed by a mix of the original provisioned instances and newly initialized on-demand instances.
+The total number of concurrent executions scales up to handle the incoming load, but some requests may experience cold start latency if new instances are needed.
+Key Points
+Provisioned Concurrency Instances:
 
-                    if y_position < 40:  # Check if Y position is out of the page
-                        pdf_canvas.showPage()  # Add a new page
-                        y_position = landscape(letter)[1] - 40  # Reset Y position for new page
+These are always warm and ready to handle requests, minimizing latency for the number of instances configured (200 in your case).
+On-Demand Scaling:
 
-            pdf_canvas.showPage()  # Add a new page for each slide
-        
-        pdf_canvas.save()
+AWS Lambda automatically scales up additional instances to handle the burst in traffic.
+These instances may experience cold starts, but they help manage large volumes of traffic beyond the provisioned concurrency.
+Queueing and Throttling:
 
-# Example usage
-pptx_path = 'your_presentation.pptx'
-pdf_path = 'output.pdf'
-converter = PptxToPdfConverter(pptx_path, pdf_path)
-converter.pptx_to_pdf()
+If the total number of concurrent requests exceeds the sum of provisioned and on-demand concurrency, requests may be throttled or queued.
+AWS Lambda uses a fair queuing system to manage these requests and process them as instances become available.
+Summary
+With Provisioned Concurrency set to 200, the first 200 requests to your Lambda function will be handled almost instantly by the pre-warmed instances, ensuring low latency. Subsequent requests will be handled by a combination of the initial provisioned instances and additional on-demand instances that AWS Lambda initializes to scale up and handle the remaining requests. This approach helps to manage large bursts of traffic while minimizing the latency for the initial configured number of requests.
