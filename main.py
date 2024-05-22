@@ -1,61 +1,146 @@
-equest id:  | Index:  | MD5:  Filename:  | Key served from cache: local:docinsight:client_info_8bc3cc94aaad42169c5fd6fbd63ffb2f
-May 22, 2024 > 10:09:22 | DEBUG | Client id: 8bc3cc94aaad42169c5fd6fbd63ffb2f | app.langchain.v1.utils.ias_openai_langchain:ias_openai_chat_completion:216 | Request id:  | Index:  | MD5:  Filename:  | payload to ias_openai_chat_completion api =====> {'engine': 'gpt-4-32k', 'messages': [{'role': 'system', 'content': 'qa agent'}, {'role': 'user', 'content': 'Given the following conversation and a follow up question, rephrase the follow up question to be a standalone question, in its original language.\n\nChat History:\n\nHuman: Based on the provided context,here is a summary of the key inclusion/exclusion criteria related to hyperglycemia and diabetes management from the clinical trial protocol: \n\nInclusion Criteria Related to Hyperglycemia:\n\n- No specific inclusion criteria related to hyperglycem ia or diabetes status. The trial appears open to patients with well-controlled diabetes based on the exclusion criteria.\n\nExclusion Criteria Related t o Hyperglycemia:\n\n- Hemoglobin A1c (HbA1c) ≥8% at screening\n- HbA1c between 7-8% at screening with associated diabetes symptoms such as polyuria or polydipsia\n- History of uncontrolled diabetes \n\nOther Relevant Criteria:\n\nPatient Population:\n- Adults with locally advanced or metastatic uro thelial cancer\n- No specifications related to diabetes status\n\nMedical History:\n- Patients with well-controlled diabetes appear eligible based on th e exclusion criteria\n- Patients with a history of uncontrolled diabetes are excluded\n\nScreening Assessments:\n- HbA1c tested at screening \n- Patient s with HbA1c ≥6.5% referred for glucose management during Cycle 1\n- Fasting blood glucose tested prior to each infusion\n\nI hope this summary of ked prior to each dosing and dose should be withheld for blood glucose >250 mg/dL (Grade 3 or higher). \n- Dosing may continue once the patient’s blood glucose has improved to ≤ Grade 2 and patient is clinically and metabolically stable.\n\nManagement of Hyperglycemia:\n- Monitor blood glucos e levels and perform additional assessments if symptoms of hyperglycemia observed.\n- Treat elevated blood glucose levels according to local standard of care. \n- Patients with history of diabetes/hyperglycemia should be advised to notify physician if glucose becomes difficult to control or if they expe rience hyperglycemia symptoms.\n- Patients who enter study with elevated HbA1c should be referred for glucose management during Cycle 1.\nAssistant: As a researcher specializing in the field of diabete s,your task is to compile comprehensive information about the inclusion and exclusion criteria related to hyperglycemia from various clinical protocols . Provide a detailed list of the specific criteria used to select and exclude participants in clinical trials targeting hyperglycemia. Additionally,inc lude separate sections with relevant information about the patient population,medical history,and other factors that are considered during the screeni ng process. The goal is to create a comprehensive resource that will aid researchers and clinicians in designing and conducting clinical trials for hype rglycemia treatments.\nFollow Up Input: What is the Dose Modification and Toxicity Management Guidelines for subjects with Type 1 diabetes mellitus (T1DM) or Hyperglycemia?\nStandalone question:'}], 'temperature': 0.0, 'max_tokens': 14858}
-May 22, 2024 > 10:09:22 | INFO | Client id: 8bc3cc94aaad42169c5fd6fbd63ffb2f | app.langchain.v1.utils.ias_openai_langchain:ias_openai_chat_completion:227 | Request id:  | Index:  | MD5:  Filename:  | Calling chat completion endpoint
-May 22, 2024 > 10:09:27 | INFO | Client id: 8bc3cc94aaad42169c5fd6fbd63ffb2f | app.langchain.v1.utils.ias_openai_langchain:ias_openai_chat_completion:239 | Request id:  | Index:  | MD5:  Filename:  | Received response from llm
-May 22, 2024 > 10:09:27 | INFO | Client id: 8bc3cc94aaad42169c5fd6fbd63ffb2f | app.langchain.v1.utils.ias_openai_langchain:ias_openai_chat_completion:241 | Request id:  | Index:  | MD5:  Filename:  | {'status': 'success', 'result': '{"content": "Can you provide the Dose Modification and Toxicity Management Guidelines for subjects diagnosed with Type 1 diabetes mellitus (T1DM) or Hyperglycemia?", "role": "assistant"}', 'totalTokens': 644}
-PAYLOAD RECEIVED FROM CHAT COMPLETEION
-May 22, 2024 > 10:09:27 | INFO | Client id: 8bc3cc94aaad42169c5fd6fbd63ffb2f | app.langchain.v1.utils.ias_openai_langchain:ias_openai_embeddings:349 | Request id:  | Index:  | MD5:  Filename:  | Triggering embedding endpoint
-May 22, 2024 > 10:09:27 | INFO | Client id: 8bc3cc94aaad42169c5fd6fbd63ffb2f | app.langchain.v1.utils.ias_openai_langchain:ias_openai_embeddings:364 | Request id:  | Index:  | MD5:  Filename:  | Recevied response from embedding endpoint
-May 22, 2024 > 10:09:29 | DEBUG | Client id: 8bc3cc94aaad42169c5fd6fbd63ffb2f | app.langchain.v1.utils.ias_openai_langchain:ias_openai_chat_completion:216 | Request id:  | Index:  | MD5:  Filename:  | payload to ias_openai_chat_completion api =====> {'engine': 'gpt-4-32k', 'messages': [{'role': 'system', 'content': 'qa agent'}, {'role': 'user', 'content': "Use the following pieces of context to answer the question at the end. If you don't know the answer, just say that you don't know, don't try to make up an answer.\n\n        271\n\n271\n\n271\n\n385\n\n385\n\n        Question: 644\n        Helpful Answer:"}], 'temperature': 0.0, 'max_tokens': 15415}
-May 22, 2024 > 10:09:29 | INFO | Client id: 8bc3cc94aaad42169c5fd6fbd63ffb2f | app.langchain.v1.utils.ias_openai_langchain:ias_openai_chat_completion:227 | Request id:  | Index:  | MD5:  Filename:  | Calling chat completion endpoint
-May 22, 2024 > 10:09:32 | INFO | Client id: 8bc3cc94aaad42169c5fd6fbd63ffb2f | app.langchain.v1.utils.ias_openai_langchain:ias_openai_chat_completion:239 | Request id:  | Index:  | MD5:  Filename:  | Received response from llm
-May 22, 2024 > 10:09:32 | INFO | Client id: 8bc3cc94aaad42169c5fd6fbd63ffb2f | app.langchain.v1.utils.ias_openai_langchain:ias_openai_chat_completion:241 | Request id:  | Index:  | MD5:  Filename:  | {'status': 'success', 'result': '{"content": "I\'m sorry, but the question \\"644\\" is not clear. Could you please provide more context or clarify the question?", "role": "assistant"}', 'totalTokens': 99}
-PAYLOAD RECEIVED FROM CHAT COMPLETEION
-May 22, 2024 > 10:09:32 | ERROR | Client id: 8bc3cc94aaad42169c5fd6fbd63ffb2f | app.langchain.v1.helper:get_llm_response:729 | Request id:  | Index:  | MD5:  Filename:  | Failed while getting llm response
-May 22, 2024 > 10:09:32 | ERROR | Client id: 8bc3cc94aaad42169c5fd6fbd63ffb2f | app.langchain.v1.api:search:182 | Request id:  | Index:  | MD5:  Filename:  | Error in invoke_search method. TypeError("unsupported operand type(s) for +: 'int' and 'str'")
-May 22, 2024 > 10:09:32 | ERROR | Client id: 8bc3cc94aaad42169c5fd6fbd63ffb2f | app.langchain.v1.api:search:186 | Request id:  | Index:  | MD5:  Filename:  | Error in search endpoint. TypeError("unsupported operand type(s) for +: 'int' and 'str'")
-May 22, 2024 > 10:09:32 | ERROR | Client id: 8bc3cc94aaad42169c5fd6fbd63ffb2f | main:timeout_middleware:122 | Request id:  | Index:  | MD5:  Filename:  | Main Exception - Human Request Error: 10.920196533203125 seconds - /docinsight/search
-May 22, 2024 > 10:09:32 | ERROR | Client id: 8bc3cc94aaad42169c5fd6fbd63ffb2f | app.utils.universal_exceptions:generic_exception_handler:60 | Request id:  | Index:  | MD5:  Filename:  | | status_code=500 | client_id=8bc3cc94aaad42169c5fd6fbd63ffb2f | error_type=TypeError | error_code=logical-weight-d095 | msg_to_human=Oh no! Something shook our matrix. Our service is realigning it. Please retry later. | url_path=/docinsight/search | exception=unsupported operand type(s) for +: 'int' and 'str' | stack_trace=Traceback (most recent call last):
-  File "D:\docinsightenv\Lib\site-packages\anyio\streams\memory.py", line 98, in receive
-    return self.receive_nowait()
-           ^^^^^^^^^^^^^^^^^^^^^
-  File "D:\docinsightenv\Lib\site-packages\anyio\streams\memory.py", line 93, in receive_nowait
-    raise WouldBlock
-anyio.WouldBlock
+from langchain.llms.base import LLM
+from pydantic import BaseModel, Field
+from typing import List, Optional, Mapping, Any
+import logging
 
-During handling of the above exception, another exception occurred:
+class IASOpenaiConversationalLLM(LLM, BaseModel):
+    """Wrapper for IAS secured OpenAI chat API"""
 
-Traceback (most recent call last):
-  File "D:\docinsightenv\Lib\site-packages\starlette\middleware\base.py", line 78, in call_next
-    message = await recv_stream.receive()
-              ^^^^^^^^^^^^^^^^^^^^^^^^^^^
-  File "D:\docinsightenv\Lib\site-packages\anyio\streams\memory.py", line 118, in receive
-    raise EndOfStream
-anyio.EndOfStream
+    engine: str
+    temperature: float
+    max_tokens: int
+    total_consumed_token: List[int] = Field(default_factory=list)
+    system_message: Optional[str] = None
+    client_id: Optional[str] = None
+    x_vsl_client_id: Optional[str] = None
+    bearer_auth: Optional[str] = None
 
-During handling of the above exception, another exception occurred:
+    class Config:
+        arbitrary_types_allowed = True
 
-Traceback (most recent call last):
-  File "D:\opensearchindexfix\vessel-services\docinsight\main.py", line 100, in timeout_middleware
-    response = await asyncio.wait_for(
-               ^^^^^^^^^^^^^^^^^^^^^^^
-  File "C:\Program Files\Python311\Lib\asyncio\tasks.py", line 479, in wait_for
-    return fut.result()
-           ^^^^^^^^^^^^
-  File "D:\docinsightenv\Lib\site-packages\starlette\middleware\base.py", line 84, in call_next
-    raise app_exc
-  File "D:\docinsightenv\Lib\site-packages\starlette\middleware\base.py", line 70, in coro
-    await self.app(scope, receive_or_disconnect, send_no_error)
-  File "D:\docinsightenv\Lib\site-packages\starlette\middleware\cors.py", line 83, in __call__
-    await self.app(scope, receive, send)
-  File "D:\docinsightenv\Lib\site-packages\starlette\middleware\exceptions.py", line 79, in __call__
-    raise exc
-  File "D:\docinsightenv\Lib\site-packages\starlette\middleware\exceptions.py", line 68, in __call__
-    await self.app(scope, receive, sender)
-  File "C:\Program Files\Python311\Lib\contextlib.py", line 222, in __aexit__
-    await self.gen.athrow(typ, value, traceback)
-  File "D:\docinsightenv\Lib\site-packages\fastapi\concurrency.py", line 36, in contextmanager_in_threadpool
-    raise e
-TypeError: unsupported operand type(s) for +: 'int' and 'str'
- |
-INFO:     127.0.0.1:53032 - "POST /docinsight/search HTTP/1.1" 500 Internal Server Error
+    @property
+    def _llm_type(self) -> str:
+        return "IAS_OpenAI"
+
+    def _call(
+        self,
+        prompt: str,
+        stop: Optional[List[str]] = None,
+    ) -> str:
+        prompt_message = prompt
+
+        logging.debug(f"Prompt before adding system message: {prompt_message}")
+        logging.debug(f"System message: {self.system_message} (Type: {type(self.system_message)})")
+
+        # Ensure system_message is a string
+        if self.system_message:
+            if not isinstance(self.system_message, str):
+                raise ValueError(f"Expected system_message to be a str, but got {type(self.system_message)}")
+            prompt_message += " " + self.system_message  # Ensure system_message is a string
+
+        logging.debug(f"Prompt after adding system message: {prompt_message}")
+
+        token_consumed = self.get_num_tokens(prompt_message)
+        logging.debug(f"Tokens consumed for prompt: {token_consumed}")
+
+        response, totaltok = ias_openai_chat_completion(
+            prompt_message,
+            self.engine,
+            self.temperature,
+            calculate_max_tokens(self.max_tokens, str(self.engine), token_consumed),
+            self.system_message,
+            self.client_id,
+            self.x_vsl_client_id,
+        )
+
+        logging.debug(f"Response from ias_openai_chat_completion: {response}")
+        logging.debug(f"Total tokens received: {totaltok}")
+
+        self.total_consumed_token.append(totaltok)
+        logging.debug(f"Total consumed tokens list: {self.total_consumed_token}")
+
+        return response
+
+    @property
+    def _identifying_params(self) -> Mapping[str, Any]:
+        """Get the identifying parameters."""
+        params = {
+            "engine": self.engine,
+            "temperature": self.temperature,
+            "max_tokens": self.max_tokens,
+            "total_consumed_token": self.total_consumed_token
+        }
+        return params
+
+    def get_num_tokens(self, text: str) -> int:
+        """Mock method to get number of tokens. Implement accordingly."""
+        logging.debug(f"Getting number of tokens for text: {text}")
+        return len(text.split())
+
+def ias_openai_chat_completion(prompt, engine, temperature, max_tokens, system_message, client_id, x_vsl_client_id):
+    """Mock function to simulate the OpenAI chat completion API call. Implement accordingly."""
+    logging.debug(f"Calling ias_openai_chat_completion with prompt: {prompt}")
+    # Simulate a response and token consumption
+    response = f"Processed: {prompt}"
+    totaltok = len(prompt.split())
+    return response, totaltok
+
+def calculate_max_tokens(max_tokens, engine, token_consumed):
+    """Mock function to calculate the maximum number of tokens. Implement accordingly."""
+    logging.debug(f"Calculating max tokens with max_tokens: {max_tokens}, engine: {engine}, token_consumed: {token_consumed}")
+    return max_tokens - token_consumed
+
+# Example usage
+if __name__ == "__main__":
+    logging.basicConfig(level=logging.DEBUG)
+    llm_engine = "gpt-3"  # Example engine name
+    llm_config = {
+        "engine": "text-davinci-003",
+        "client_id": "example_client_id",
+        "temperature": 0.7,
+        "max_tokens": 100,
+        "system_message": "Example system message"
+    }
+
+    # Choose the correct LLM class
+    llm_class = (
+        IASOpenaiConversationalLLM
+        if llm_engine.startswith("gpt")
+        else IASBedrockLLM  # Assuming IASBedrockLLM is defined elsewhere
+    )
+
+    # Initialize the LLM instance
+    llm_instance = llm_class(**llm_config)
+
+    # Create the QA chain
+    qa = IAS_ConversationalRetrievalChain.from_llm(
+        llm_instance,
+        chain_type="stuff",
+        retriever="vector_db",  # Assuming vector_db is defined elsewhere
+        return_source_documents=True,
+        max_tokens_limit=calculate_max_tokens(
+            100, str(llm_engine), 10  # Example values for max_tokens and min_response_token
+        ),
+        response_if_no_docs_found="No documents found",  # Example response
+        llm_response_flag=True,
+        answer_from_llm_if_no_docs_found=True,
+    )
+
+    # Prepare the chat history
+    chat_history = [{"user": "Hello", "bot": "Hi there!"}]  # Example chat history
+
+    # Set the user query
+    user_query = "What is the weather today?"
+
+    # Execute the QA chain
+    llm_response = qa(
+        {
+            "question": user_query,
+            "chat_history": chat_history,
+            "answer_with_llm_knowledge": "Answer from your own knowledge base if you don't know."
+        }
+    )
+
+    # Print the response and total consumed tokens
+    print(f"LLM Response: {llm_response}")
+    print(f"Total consumed tokens: {llm_instance.total_consumed_token}")
