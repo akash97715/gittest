@@ -1,71 +1,41 @@
-@backoff.on_exception(
-    backoff.expo, GenericException, max_tries=20, max_time=60, giveup=is_http_4xx_error
-)
-def ias_openai_chat_completion(
-    user_message: str,
-    engine: str,
-    temperature: float,
-    max_tokens: int,
-    system_message: str = None,
-    client_id: str = None,
-    x_vsl_client_id: str = None,
-    bearer_token: str = None,
-) -> str:
-    """
-    Generates a chat completion response for OpenAI model
-    :param token: auth token
-    :param user_message: user's prompt
-    :param engine: model capable for chat completion i.e. gpt*
-    :param temperature: value 0-1 that tells model to be more precise or generative
-    :param max_tokens: max tokens the prompt & response should be. It depends on the model's capacity
-    :return: response from OpenAI model
-    """
-    try:
-        payload = {
-            "engine": engine,
-            "messages": [
-                {"role": "user", "content": user_message},
-            ],
-            "temperature": temperature,
-            "max_tokens": max_tokens,
-        }
+class IASOpenaiEmbeddings(Embeddings):
+    """Wrapper for IAS secured OpenAI embedding API"""
  
-        if system_message:
-            payload["messages"].insert(0, {"role": "system", "content": system_message})
+    engine = str
+    client_id: str = None
+    x_vsl_client_id: str = None
+    bearer_auth: str = None
+    totalToken:list
  
-        logger.debug(f'payload to ias_openai_chat_completion api =====> {payload}')
-        token = get_auth_token(bearer_token)
-        headers = {
-            "Content-Type": "application/json",
-            "Authorization": f"Bearer {token}",
-        }
-        if x_vsl_client_id is not None:
-            headers["x-vsl-client_id"] = x_vsl_client_id
-        elif client_id is not None:
-            headers["x-vsl-client_id"] = client_id
+    def __init__(self, engine, client_id,totalToken, x_vsl_client_id=None, bearer_auth=None):
+        self.engine = engine
+        self.totalToken=totalToken
+        self.client_id = client_id
+        self.x_vsl_client_id = x_vsl_client_id
+        self.bearer_auth = bearer_auth
  
-        logger.info("Calling chat completion endpoint")
-        response = requests.post(IAS_OPENAI_CHAT_URL, headers=headers, json=payload)
+    def embed_documents(self, texts: List[str]) -> List[List[float]]:
+        """Embeddings search docs."""
+        # NOTE: to keep things simple, we assume the list may contain texts longer
+        #       than the maximum context and use length-safe embedding function.
  
-        if response.status_code != 200:
-            logger.error(
-                f"Error calling OpenAI chat completion  API: {response.status_code}, {response.json()}"
-            )
-            raise GenericException(
-                f"Error calling OpenAI chat completion API: {response.status_code}, {response.json()}",
-                status_code=response.status_code,
-            )
+        response, totaltok = ias_openai_embeddings(
+            texts, self.engine, self.client_id, self.x_vsl_client_id, self.bearer_auth
+        )
+        self.totalToken.append(totaltok)
  
-        logger.info("Received response from llm")
-     
-        logger.info(response.json())
-        print("PAYLOAD RECEIVED FROM CHAT COMPLETEION")
-        chat_completion = json.loads(response.json()["result"])["content"]
-        temp=response.json()
-        total_token=int(temp['totalTokens'])        
+        # Extract the embeddings
+        embeddings: list[list[float]] = [data["embedding"] for data in response]
+        return embeddings
  
-        return total_token,chat_completion
-    except Exception as e:
-        logger.error("Got the Exception", str(e))
-        # raising backoff exception
-        raise GenericException(e)
+    def embed_query(self, text: str) -> List[float]:
+        """Embeddings  query text."""
+ 
+        response, totaltok = ias_openai_embeddings(
+            text, self.engine, self.client_id, self.x_vsl_client_id, self.bearer_auth
+        )
+        self.totalToken.append(totaltok)
+ 
+        # Extract the embeddings and total tokens
+        embeddings: list[list[float]] = [data["embedding"] for data in response]
+        return embeddings[0]
