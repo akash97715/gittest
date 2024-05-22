@@ -1,1 +1,36 @@
-mappingproxy({'__config__': __main__.Config,              '__fields__': {'name': ModelField(name='name', type=Optional[str], required=False, default=None),               'cache': ModelField(name='cache', type=Union[BaseCache, bool, NoneType], required=False, default=None),               'verbose': ModelField(name='verbose', type=bool, required=False, default_factory='<function _get_verbosity>'),               'callbacks': ModelField(name='callbacks', type=Union[List[langchain_core.callbacks.base.BaseCallbackHandler], BaseCallbackManager, NoneType], required=False, default=None),               'tags': ModelField(name='tags', type=Optional[List[str]], required=False, default=None),               'metadata': ModelField(name='metadata', type=Optional[Mapping[str, Any]], required=False, default=None),               'callback_manager': ModelField(name='callback_manager', type=Optional[BaseCallbackManager], required=False, default=None),               'engine': ModelField(name='engine', type=str, required=True),               'temperature': ModelField(name='temperature', type=float, required=True),               'max_tokens': ModelField(name='max_tokens', type=int, required=True),               'system_message': ModelField(name='system_message', type=Optional[str], required=False, default=None)},              '__exclude_fields__': {'callbacks': True,               'tags': True,               'metadata': True,               'callback_manager': True},              '__include_fields__': None,              '__validators__': {'verbose': [<pydantic.class_validators.Validator at 0x20529055a30>]},              '__pre_root_validators__': [],              '__post_root_validators__': [(False,                <function langchain_core.language_models.llms.BaseLLM.raise_deprecation(cls, values: 'Dict') -> 'Dict'>)],              '__schema_cache__': {},              '__json_encoder__': <staticmethod(<cyfunction pydantic_encoder at 0x000002052898ECF0>)>,              '__custom_root_type__': False,              '__private_attributes__': {'_lc_kwargs': ModelPrivateAttr(default=PydanticUndefined, default_factory=<class 'dict'>)},              '__slots__': set(),              '__hash__': None,              '__class_vars__': set(),              '__module__': '__main__',              '__annotations__': {'engine': str,               'temperature': float,               'max_tokens': int,               'system_message': str},              '__doc__': 'Wrapper for IAS secured OpenAI chat API',              '_llm_type': <property at 0x2052fb3d6c0>,              '_call': <function __main__.IASOpenaiConversationalLLM._call(self, prompt: str, stop: Optional[List[str]] = None) -> str>,              '_identifying_params': <property at 0x2052fb3cd10>,              '__parameters__': (),              '__abstractmethods__': frozenset(),              '_abc_impl': <_abc._abc_data at 0x2052fbfccc0>,              '__signature__': <pydantic.utils.ClassAttribute at 0x2052fbd3fa0>})
+llm_class = (
+            IASOpenaiConversationalLLM
+            if llm_engine.startswith("gpt")
+            else IASBedrockLLM
+        )
+        qa = IAS_ConversationalRetrievalChain.from_llm(
+            llm_class(**llm_config),
+            chain_type="stuff",
+            retriever=vector_db,
+            return_source_documents=True,
+            max_tokens_limit=calculate_max_tokens(
+                max_tokens, str(llm_engine), min_response_token
+            ),
+            response_if_no_docs_found=(
+                answer_if_no_docs_found if vector_score_threshold else None
+            ),
+            llm_response_flag=llm_response_flag,
+            answer_from_llm_if_no_docs_found=answer_from_llm_if_no_docs_found,
+        )
+       
+ 
+        chat_history = create_chat_history(context)
+ 
+        if answer_from_llm_if_no_docs_found:
+            # Added for Vox Flow.
+            answer_with_llm_knowledge = "If you don't know the answer, then answer from your own knowledge base."
+        else:
+            answer_with_llm_knowledge = "If you don't know the answer, just say that you don't know, don't try to make up an answer."
+ 
+        llm_response = qa(
+            {
+                "question": user_query,
+                "chat_history": chat_history,
+                "answer_with_llm_knowledge": answer_with_llm_knowledge,
+            }
+        )
