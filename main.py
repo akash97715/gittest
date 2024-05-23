@@ -73,7 +73,7 @@ class EmbeddingLoader:
         self.max_retries = max_retries
         self.df = pd.read_parquet(parquet_path)
     
-    def process_batch(self, texts):
+    def process_row(self, texts):
         for attempt in range(self.max_retries):
             try:
                 embeddings, total_token = ias_openai_embeddings(
@@ -86,34 +86,30 @@ class EmbeddingLoader:
                     return None, str(e)
         return None, "Maximum retries exceeded"
 
-    def update_dataframe(self, batch_indices, embeddings_list, error_message=None):
-        for idx, embeddings in zip(batch_indices, embeddings_list):
-            if error_message:
-                self.df.at[idx, 'embedding'] = error_message
-                self.df.at[idx, 'status'] = 'failed'
-            else:
-                self.df.at[idx, 'embedding'] = json.dumps(embeddings)
-                self.df.at[idx, 'status'] = 'success'
+    def update_dataframe(self, idx, embeddings_list, error_message=None):
+        if error_message:
+            self.df.at[idx, 'embedding'] = error_message
+            self.df.at[idx, 'status'] = 'failed'
+        else:
+            self.df.at[idx, 'embedding'] = json.dumps(embeddings_list)
+            self.df.at[idx, 'status'] = 'success'
 
     def process_parquet(self):
-        batch_size = 16
         with ThreadPoolExecutor(max_workers=5) as executor:
             futures = []
-            for start in range(0, len(self.df), batch_size):
-                end = min(start + batch_size, len(self.df))
-                batch_indices = self.df.index[start:end]
-                texts = self.df.loc[batch_indices, 'chunk'].tolist()
-                futures.append(executor.submit(self.process_batch, texts))
+            for idx in self.df.index:
+                texts = self.df.at[idx, 'chunk']
+                futures.append((idx, executor.submit(self.process_row, texts)))
             
-            for future, batch_indices in zip(as_completed(futures), range(0, len(self.df), batch_size)):
+            for idx, future in futures:
                 try:
                     embeddings, total_token = future.result()
                     if embeddings is None:
-                        self.update_dataframe(self.df.index[batch_indices:batch_indices+batch_size], [None]*batch_size, total_token)
+                        self.update_dataframe(idx, None, total_token)
                     else:
-                        self.update_dataframe(self.df.index[batch_indices:batch_indices+batch_size], embeddings)
+                        self.update_dataframe(idx, embeddings)
                 except Exception as e:
-                    logger.error(f"Error in future: {str(e)}")
+                    logger.error(f"Error in future for index {idx}: {str(e)}")
         
         self.df.to_parquet(self.parquet_path, index=False)
         print(f"Updated Parquet file saved at {self.parquet_path}")
@@ -121,8 +117,22 @@ class EmbeddingLoader:
 # Example usage:
 if __name__ == "__main__":
     # First, create the initial Parquet file with chunks and metadata
-    chunks = ["chunk1", "chunk2", "chunk3"]
-    metadata = ["metadata1", "metadata2", "metadata3"]
+    chunks = [
+        ["chunk1_item1", "chunk1_item2", "chunk1_item3", "chunk1_item4", "chunk1_item5",
+         "chunk1_item6", "chunk1_item7", "chunk1_item8", "chunk1_item9", "chunk1_item10",
+         "chunk1_item11", "chunk1_item12", "chunk1_item13", "chunk1_item14", "chunk1_item15"],
+        ["chunk2_item1", "chunk2_item2", "chunk2_item3", "chunk2_item4", "chunk2_item5",
+         "chunk2_item6", "chunk2_item7", "chunk2_item8", "chunk2_item9", "chunk2_item10",
+         "chunk2_item11", "chunk2_item12", "chunk2_item13", "chunk2_item14", "chunk2_item15"]
+    ]
+    metadata = [
+        ["metadata1_item1", "metadata1_item2", "metadata1_item3", "metadata1_item4", "metadata1_item5",
+         "metadata1_item6", "metadata1_item7", "metadata1_item8", "metadata1_item9", "metadata1_item10",
+         "metadata1_item11", "metadata1_item12", "metadata1_item13", "metadata1_item14", "metadata1_item15"],
+        ["metadata2_item1", "metadata2_item2", "metadata2_item3", "metadata2_item4", "metadata2_item5",
+         "metadata2_item6", "metadata2_item7", "metadata2_item8", "metadata2_item9", "metadata2_item10",
+         "metadata2_item11", "metadata2_item12", "metadata2_item13", "metadata2_item14", "metadata2_item15"]
+    ]
     initial_parquet_path = "path/to/your_initial.parquet"
 
     file_loader = FileLoader(chunks, metadata, initial_parquet_path)
