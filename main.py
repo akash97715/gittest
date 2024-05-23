@@ -1,3 +1,138 @@
-Message: 'Got the Exception'Arguments: ('Object of type ndarray is not JSON serializable',)ERROR:__main__:Attempt 1 failed with error: Object of type ndarray is not JSON serializableINFO:__main__:Triggering embedding endpoint{'input': array(['disease, impact on sex life and personal relationships, and \nability to travel), (2) disease management (eg, HCP visits \nand\xa0use of resources and support groups, knowledge of UC, \nand path to diagnosis), and (3) overall quality of life (eg, \nmissed events due to their UC, work and life changes, and UC \nimpact on daily life and starting a family).\nDisease activity was assessed through (1)\xa0the self-reporting \nof flares, defined as a time with a dramatic increase in \nsymptoms compared with those typically experienced, and \n(2)\xa0remission, defined as UC disease control with few to no \nsymptoms.2,10\nSurvey items were analyzed based on patient demographics, \nincluding income level, employment status, educational level, \nage, self-identified sex, and psychological comorbidities. \nStratification by income and education was country-\nspecific and included low, middle, and high ranges (Table 1, \nSupplementary Data Content 1). Patients were categorized \nby their employment status: full-time employment, part-\ntime employment, or not employed. Patients in the “not em-\nployed” group were retired, stay-at-home spouses or parents, \nstudents, not working due to disability or illness, or simply',       'specific and included low, middle, and high ranges (Table 1, \nSupplementary Data Content 1). Patients were categorized \nby their employment status: full-time employment, part-\ntime employment, or not employed. Patients in the “not em-\nployed” group were retired, stay-at-home spouses or parents, \nstudents, not working due to disability or illness, or simply \nnot employed (including patients who were not employed \nbut looking for work, or not employed and not looking for \nwork). Regarding comparisons by age, sex, and psycholog-\nical comorbidities, patients aged\xa0younger than 50 years were \ncompared with those aged\xa0 50 years and older; males were \ncompared with females, and patients with a diagnosis of de-\npression or anxiety were compared with patients without de-\npression or anxiety, respectively. Diagnosis was self-reported \nvia a survey question that asked patients if they had been told \nby a doctor that they had the condition (question: “Have you \npersonally been told by a doctor that you have any of the fol-\nlowing health conditions? Please select all that apply” (Patient \nSurvey Questions, Supplementary Data Content 6).\nStatistical Analysis\nSurvey responses were analyzed globally using a forward',       'via a survey question that asked patients if they had been told \nby a doctor that they had the condition (question: “Have you \npersonally been told by a doctor that you have any of the fol-\nlowing health conditions? Please select all that apply” (Patient \nSurvey Questions, Supplementary Data Content 6).\nStatistical Analysis\nSurvey responses were analyzed globally using a forward \nstepwise logistic regression analysis12 performed on the un-\nweighted results from the 5 countries mentioned previously. \nThe independent variables included demographics (income \n[n = 831], employment status [n = 1000], educational level \n[n = 1000], age [n = 1000], sex [n = 1000]), and psychological \ncomorbidities (depression and/or anxiety [n = 1000]). The de-\npendent variables included questions on the importance of \ndaily activities, events missed due to illness, work and life \nchanges, overall health, other diagnosed conditions, visits to \nHCPs, access to health care supplemental resources (including support groups), medications taken for UC, years between \nsymptom onset and official diagnosis, and  knowledge of UC. \nTo determine which variables to include, each regression used \nan entry P of 0.05 and a removal P of 0.1. Multicollinearity',       'changes, overall health, other diagnosed conditions, visits to \nHCPs, access to health care supplemental resources (including support groups), medications taken for UC, years between \nsymptom onset and official diagnosis, and  knowledge of UC. \nTo determine which variables to include, each regression used \nan entry P of 0.05 and a removal P of 0.1. Multicollinearity \nwas checked, and none of the variation inflation factors were \nabove\xa0 3, so no adjustment was needed. Odds ratios (ORs) \nand 95% confidence intervals (CIs) from multivariate lo-\ngistic regression models measured the relative difference be-\ntween demographic groups, adjusting for other confounders, \nincluding other demographic variables and diagnosed \nconditions. Unweighted data were used for the logistic regres-\nsion due to a large margin of error around the ORs in the \npost-weighted results, which were a result of large weights in \ncountries with higher populations. Subgroup  analysis of the \nindependent variables of income, education, sex, and psycho-\nlogical comorbidities (depression or anxiety) used descriptive \nstatistics from the 5-country total, post-weighted to adjust for \nthe relative population size of each country. A P of\xa0< .05 indi-',       'post-weighted results, which were a result of large weights in \ncountries with higher populations. Subgroup  analysis of the \nindependent variables of income, education, sex, and psycho-\nlogical comorbidities (depression or anxiety) used descriptive \nstatistics from the 5-country total, post-weighted to adjust for \nthe relative population size of each country. A P of\xa0< .05 indi-\ncated statistical significance.\nEthical Considerations\nThis survey was noninterventional, not intended to pro-\nvide clinical data to support treatment decisions, and not \nconducted as a clinical trial for any endpoints; therefore, \nethics approval was not required. All patients provided their \ninformed consent before completing the survey and were \ncompensated on behalf of the sponsor by the investigators for \ntheir participation. In the United States, the research method \nand survey questionnaire were reviewed and received inde-\npendent review board approval (Western Institutional Review \nBoard protocol number 20171627).2,10\nResults\nPatient Demographics, Disease Characteristics, and \nPsychological Comorbidities\nThis analysis included 1000 patients, of whom 301 patients \nwere from the United States, 215 patients were from Canada, \n210 patients were from Japan, 169 patients were from',       'and survey questionnaire were reviewed and received inde-\npendent review board approval (Western Institutional Review \nBoard protocol number 20171627).2,10\nResults\nPatient Demographics, Disease Characteristics, and \nPsychological Comorbidities\nThis analysis included 1000 patients, of whom 301 patients \nwere from the United States, 215 patients were from Canada, \n210 patients were from Japan, 169 patients were from \nFrance, and 105 patients were from Finland. Patient dem-\nographics and psychological comorbidities are described in \nTable 1. Overall, 50% of patients identified as female. The \nmean age of respondents was 41.3 (standard deviation [SD], \n12.6) years, and 75% of patients were aged\xa0younger than 50 \nyears. The majority of patients (82%) had moderate to se-\nvere disease and had been diagnosed with UC for a mean of \n9.0 (SD, 9.5) years, with 57% having ever received biologic \ntherapy for their UC. Less than half of the patients (45%) \ndescribed their overall health as “good/excellent.” Regarding \ndemographic variables of interest, 27%, 36%, and 32% of \npatients had a low-, middle-, and high-income level, respec-',       '9.0 (SD, 9.5) years, with 57% having ever received biologic \ntherapy for their UC. Less than half of the patients (45%) \ndescribed their overall health as “good/excellent.” Regarding \ndemographic variables of interest, 27%, 36%, and 32% of \npatients had a low-, middle-, and high-income level, respec-\ntively (income was not requested in the original UC Narrative \nsurvey in France). Most patients (66%) were in full-time em-\nployment, 9% were employed part time, and 25% were not \nemployed. A full breakdown of patients’ employment status, \nincluding details of those not employed, is found in the Tables \nof Supplementary Data Content 2. Patients with a low or \nmiddle income were less likely to be employed (part time or \nfull time) than high-income patients (proportions in employ-\nment were 56%, 79%, and 87% for each income level, respec-\ntively). Similarly, patients with a high educational level were',       'including details of those not employed, is found in the Tables \nof Supplementary Data Content 2. Patients with a low or \nmiddle income were less likely to be employed (part time or \nfull time) than high-income patients (proportions in employ-\nment were 56%, 79%, and 87% for each income level, respec-\ntively). Similarly, patients with a high educational level were \nmore likely to be employed than those with middle or low Downloaded from
-https://academic.oup.com/ibdjournal/advance-article/doi/10.1093/ibd/izad102/7193724
-by Zoetis user on 04 October 2023',        '4\nOdufalu et al\neducational levels (proportions in employment were 85%, \n58%, and 60% for patients with a high, middle, and low edu-\ncational level, respectively). Males (82%) were more likely to \nbe employed than females (68%; Table, Supplementary Data \nContent 3).\nIn total, 26% of patients had a current diagnosis of de-\npression (15%) or anxiety (21%). Low-income patients were \nmore likely than high-income patients to report having either \nof these conditions; 23% and 11% of\xa0low- and high-income \npatients, respectively, were diagnosed with depression; 28% \nand 16% of\xa0low- and high-income patients, respectively, were \ndiagnosed with anxiety. More females reported having depres-\nsion or anxiety (19% and 31%, respectively) compared with \nmales (10% and 11%, respectively; Table, Supplementary \nData Content 3).\nSex differences were also present in prescription medications \never taken for UC. More females than males had ever taken \ncorticosteroids (females, 81%; males, 58%), 5-ASAs (females,',       'diagnosed with anxiety. More females reported having depres-\nsion or anxiety (19% and 31%, respectively) compared with \nmales (10% and 11%, respectively; Table, Supplementary \nData Content 3).\nSex differences were also present in prescription medications \never taken for UC. More females than males had ever taken \ncorticosteroids (females, 81%; males, 58%), 5-ASAs (females, \n79%; males, 54%), or immunosuppressants (females, 56%; T able 1. Patient demographics, baseline disease characteristics, and \npsychological comorbidities.a\nCharacteristics Patients\n(N = 1000)\nAge (years), mean (SD) 41.3 (12.6)\n  <50, n (%) 753 (75)\n  ≥50, n (%) 247 (25)\nFemale, n (%) 498 (50)\nAge at UC diagnosis (years), mean (SD) 32.3 (12.4)\nTime since UC diagnosis (years), mean (SD) 9.0 (9.5)\nTime since UC diagnosis, n (%)\n  <1 year 49 (5)\n  1–4 years 415 (41)\n  5–9 years 198 (20)\n  ≥10 years 338 (34)\nSeverity of UC,b n (%)',       'Age at UC diagnosis (years), mean (SD) 32.3 (12.4)\nTime since UC diagnosis (years), mean (SD) 9.0 (9.5)\nTime since UC diagnosis, n (%)\n  <1 year 49 (5)\n  1–4 years 415 (41)\n  5–9 years 198 (20)\n  ≥10 years 338 (34)\nSeverity of UC,b n (%)\n  Milder UC 183 (18)\n  Moderate to severe UC 817 (82)\nCurrently in remissionc676 (68)\nOverall health, n (%)\n  Good/excellent 447 (45)\n  Poor/fair 553 (55)\nPrescription medications ever taken for UC, n (%)\n  5-ASAs (mesalamine, mesalazine) 664 (66)\n  Corticosteroids 694 (69)\n  Biologic therapy 570 (57)\n   Anti-TNF biologic 538 (54)\n   Other biologicd120 (16)\n  Immunosuppressant 452 (45)\n  Another prescription medication 204 (20)\nPrescription medications currently taking for UC, n (%)\n  5-ASAs 434 (43)\n  Corticosteroids 225 (23)\n  Biologic therapy 458 (46)',       'Biologic therapy 570 (57)\n   Anti-TNF biologic 538 (54)\n   Other biologicd120 (16)\n  Immunosuppressant 452 (45)\n  Another prescription medication 204 (20)\nPrescription medications currently taking for UC, n (%)\n  5-ASAs 434 (43)\n  Corticosteroids 225 (23)\n  Biologic therapy 458 (46)\n   Anti-TNF biologic 395 (39)\n   Other biologicd84 (11)\n  Immunosuppressant 287 (29)\n  Another prescription medication 110 (11)\n  Not currently taking prescription medication 50 (5)\nImpact at work, n (%) 836 (84)\n  Took time away from work due to their UC, n (%) 624 (62)\nIncome level,e n (%)\n  Lowf238 (27)\n  Middleg317 (36)\n  Highh284 (32)\nEmployment status, n (%)\n  Not employedi250 (25)\n  Part-time employment 90 (9)\n  Full-time employment 661 (66)\nEducational level, n (%)\n  Lowj111 (11)\n  Middlek261 (26)\n  Highl628 (63)Characteristics Patients\n(N = 1000)',       "Middleg317 (36)\n  Highh284 (32)\nEmployment status, n (%)\n  Not employedi250 (25)\n  Part-time employment 90 (9)\n  Full-time employment 661 (66)\nEducational level, n (%)\n  Lowj111 (11)\n  Middlek261 (26)\n  Highl628 (63)Characteristics Patients\n(N = 1000)\nDiagnosis of depression,a n (%) 147 (15)\nDiagnosis of anxiety,a n (%) 210 (21)\nAbbreviations: 5-ASAs, aminosalicylates; BEP; Baccalauréate Professionnel; \nCAD, Canadian dollars; CAP, Certificate d'Aptitude Professionelle;\xa0CEGEP, \nCollège d’enseignement général et professionnel; n, weighted number \nof patients with each characteristic; N, number of patients included in \nthe analysis; SD, standard deviation; TNF, tumor necrosis factor; UC, \nulcerative colitis; USD, United States dollars.\naDiagnosed condition; Question: “Have you personally been told by a \ndoctor that you have any of the following health conditions? Please select \nall that apply” (Patient Survey Questions, Supplementary Data Content 6).",       'of patients with each characteristic; N, number of patients included in \nthe analysis; SD, standard deviation; TNF, tumor necrosis factor; UC, \nulcerative colitis; USD, United States dollars.\naDiagnosed condition; Question: “Have you personally been told by a \ndoctor that you have any of the following health conditions? Please select \nall that apply” (Patient Survey Questions, Supplementary Data Content 6).\nbPatients with a “milder” form of the disease were defined as those who \nhad ever taken a prescription medication for their UC (excluding those \nwho had only taken 5-ASAs, who were defined as having “mild” UC, and \nwho were excluded from this analysis), had taken corticosteroids for <4 of \nthe past 12 months, and had never taken biologic or immunosuppressant \ntherapy. Patients with “moderate to severe” disease were defined as those \nwho had taken corticosteroid treatment for ≥4 of the past 12 months, or \nhad ever taken a biologic or immunosuppressant for their UC.\ncUC disease control with few to no symptoms.\ndN = 756; Japan was excluded from the analysis because this information \nwas not requested in the original UC Narrative survey in Japan.',       'therapy. Patients with “moderate to severe” disease were defined as those \nwho had taken corticosteroid treatment for ≥4 of the past 12 months, or \nhad ever taken a biologic or immunosuppressant for their UC.\ncUC disease control with few to no symptoms.\ndN = 756; Japan was excluded from the analysis because this information \nwas not requested in the original UC Narrative survey in Japan.\neN = 881; France was excluded from the analysis since income was not \nrequested in the original UC Narrative survey in France.\nfUnited States and Canada: <$50 000 USD, CAD, respectively; Japan: \n<¥4 000 000; Finland: <€30 000.\ngUnited States and Canada: $50 000–99 999 USD, CAD, respectively; \nJapan: ¥4 000 000–6 999 999; \nFinland: €30 000–49 999.\nhUnited States and Canada: ≥$100 000 USD, CAD, respectively; Japan: \n≥¥7 000 000; Finland: ≥€50 000.\niIncludes patients who were not employed but looking for work, not \nemployed and not looking for work, retired, stay-at-home spouses or \nparents, students, or not working due to disability or illness.'],      dtype=object), 'engine': 'text-embedding-ada-002'}
+import pandas as pd
+import requests
+import json
+from typing import List
+import logging
+from concurrent.futures import ThreadPoolExecutor, as_completed
+import numpy as np
+
+# Configure logger
+logging.basicConfig(level=logging.INFO)
+logger = logging.getLogger(__name__)
+
+# Placeholder for your constants and exceptions
+IAS_EMBEDDINGS_URL = "https://api.example.com/embeddings"
+
+class GenericException(Exception):
+    pass
+
+def get_auth_token(bearer_token: str) -> str:
+    # Placeholder for your token generation logic
+    return "your_generated_token"
+
+def ias_openai_embeddings(token: str, raw_text: List[str], engine: str):
+    try:
+        url = IAS_EMBEDDINGS_URL
+        # Ensure raw_text is a list of strings
+        if isinstance(raw_text, np.ndarray):
+            raw_text = raw_text.tolist()
+        payload = {"input": raw_text, "engine": engine}
+        headers = {
+            "Content-Type": "application/json",
+            "Accept": "application/json",
+            "Authorization": f"Bearer {token}",
+        }
+        logger.info("Triggering embedding endpoint")
+        logger.info(f"Payload: {payload}")
+        response = requests.post(url, headers=headers, json=payload)
+
+        if response.status_code != 200:
+            logger.error(
+                f"Error calling OpenAI embedding API: {response.status_code}, {response.json()}"
+            )
+            raise Exception(
+                f"Error calling OpenAI embedding API: {response.status_code}, {response.json()}"
+            )
+
+        embeddings = response.json()["result"]
+        embeddings = [embedding if isinstance(embedding, list) else embedding.tolist() for embedding in embeddings]
+        logger.info("Received response from embedding endpoint")
+
+        return embeddings
+    except Exception as e:
+        logger.error("Got the Exception: %s", str(e))
+        raise GenericException(e)
+
+class EmbeddingLoader:
+    def __init__(self, parquet_path, engine, client_id, x_vsl_client_id=None, bearer_token=None, max_retries=3):
+        self.parquet_path = parquet_path
+        self.engine = engine
+        self.client_id = client_id
+        self.x_vsl_client_id = x_vsl_client_id
+        self.bearer_token = bearer_token
+        self.max_retries = max_retries
+        self.df = pd.read_parquet(parquet_path)
+    
+    def process_row(self, texts):
+        for attempt in range(self.max_retries):
+            try:
+                embeddings = ias_openai_embeddings(token=self.bearer_token, raw_text=texts, engine=self.engine)
+                return embeddings, None
+            except Exception as e:
+                logger.error(f"Attempt {attempt + 1} failed with error: {str(e)}")
+                if attempt == self.max_retries - 1:
+                    return None, str(e)
+        return None, "Maximum retries exceeded"
+
+    def update_dataframe(self, idx, embeddings_list, error_message=None):
+        if error_message:
+            self.df.at[idx, 'embedding'] = error_message
+            self.df.at[idx, 'status'] = 'failed'
+        else:
+            self.df.at[idx, 'embedding'] = json.dumps(embeddings_list)
+            self.df.at[idx, 'status'] = 'success'
+
+    def process_parquet(self):
+        with ThreadPoolExecutor(max_workers=5) as executor:
+            futures = []
+            for idx in self.df.index:
+                texts = self.df.at[idx, 'chunk']
+                futures.append((idx, executor.submit(self.process_row, texts)))
+            
+            for idx, future in futures:
+                try:
+                    embeddings, error_message = future.result()
+                    if embeddings is None:
+                        self.update_dataframe(idx, None, error_message)
+                    else:
+                        self.update_dataframe(idx, embeddings)
+                except Exception as e:
+                    logger.error(f"Error in future for index {idx}: {str(e)}")
+        
+        self.df.to_parquet(self.parquet_path, index=False)
+        print(f"Updated Parquet file saved at {self.parquet_path}")
+
+# Example usage:
+if __name__ == "__main__":
+    # First, create the initial Parquet file with chunks and metadata
+    chunks = [
+        ["chunk1_item1", "chunk1_item2", "chunk1_item3", "chunk1_item4", "chunk1_item5",
+         "chunk1_item6", "chunk1_item7", "chunk1_item8", "chunk1_item9", "chunk1_item10",
+         "chunk1_item11", "chunk1_item12", "chunk1_item13", "chunk1_item14", "chunk1_item15"],
+        ["chunk2_item1", "chunk2_item2", "chunk2_item3", "chunk2_item4", "chunk2_item5",
+         "chunk2_item6", "chunk2_item7", "chunk2_item8", "chunk2_item9", "chunk2_item10",
+         "chunk2_item11", "chunk2_item12", "chunk2_item13", "chunk2_item14", "chunk2_item15"]
+    ]
+    metadata = [
+        ["metadata1_item1", "metadata1_item2", "metadata1_item3", "metadata1_item4", "metadata1_item5",
+         "metadata1_item6", "metadata1_item7", "metadata1_item8", "metadata1_item9", "metadata1_item10",
+         "metadata1_item11", "metadata1_item12", "metadata1_item13", "metadata1_item14", "metadata1_item15"],
+        ["metadata2_item1", "metadata2_item2", "metadata2_item3", "metadata2_item4", "metadata2_item5",
+         "metadata2_item6", "metadata2_item7", "metadata2_item8", "metadata2_item9", "metadata2_item10",
+         "metadata2_item11", "metadata2_item12", "metadata2_item13", "metadata2_item14", "metadata2_item15"]
+    ]
+    initial_parquet_path = "path/to/your_initial.parquet"
+
+    # Assuming FileLoader class exists
+    file_loader = FileLoader(chunks, metadata, initial_parquet_path)
+    file_loader.create_parquet()
+
+    # Then, process the Parquet file to generate embeddings
+    embedding_loader = EmbeddingLoader(
+        parquet_path=initial_parquet_path,
+        engine="your_engine",
+        client_id="your_client_id",
+        x_vsl_client_id="your_x_vsl_client_id",
+        bearer_token="your_bearer_token"
+    )
+    embedding_loader.process_parquet()
