@@ -1,1 +1,7 @@
-[{\\"object\\": \\"embedding\\", \\"index\\": 0, \\"embedding\\": [-0.014645539, -0.0025198748, 0.033712372, -0.034554526, -0.045002464, 0.006641811, -0.032870222, 0.005967432, -0.015474532, -0.014592905, 0.0070793354,},{....}]
+[12:32 PM] Deep, Akash (External)
+        metering_data={'totalPages':total_pages,'totalTable':self.total_extracted_tables, 'filteredTable':len(self.extracted_tables),  'advTableFilter':self.advance_table_filter}
+       
+        total_pages_temp = metering_data.get('metering_data', {}).get('totalPages', 0)
+        adv_table_filter = metering_data.get('metering_data', {}).get('advTableFilter', False)
+        total_table = metering_data.get('metering_data', {}).get('totalTable', 0)
+        total_pages = total_pages_temp if not adv_table_filter else total_pages_temp + total_table
