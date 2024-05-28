@@ -1,149 +1,216 @@
 import os
-import json
-import asyncio
-import pathlib
-from typing import Optional, List, Dict, Any
+import uuid
+from collections import defaultdict
+import pandas as pd
+import boto3
+from langchain.text_splitter import RecursiveCharacterTextSplitter
 from app.utils.custom_loguru import logger
-from app.chunk_processor import ChunkProcessor
-from app.document_loader import DocumentLoader
-from app.parquet_helper import ParquetHelper
-from app.langchain.s3_doc_store import S3DocStore
+from typing import Optional, List
+from app.ingestion_pipeline import S3UploadError, ChunkingException
 from langchain_core.documents import Document
 
-# Environment variables
-PARENT_CHUNKS_BUCKET_NAME = os.environ.get("PARENT_CHUNKS_BUCKET_NAME", "")
-TEXTRACT_ENABLED = json.loads(os.getenv("TEXTRACT_ENABLED", "false").lower())
-UNSTRUCTURED_EXCEL_LOADER_ENABLED = json.loads(
-    os.getenv("UNSTRUCTURED_LOADER_ENABLED", "false").lower()
-)
-DOCS_BUCKET_NAME = os.environ.get("DOCS_BUCKET_NAME", "")
-OCR_BUCKET_NAME = os.environ.get("OCR_BUCKET_NAME", "")
-
-class ChunkingException(Exception):
-    pass
-
-class FileLoaderException(Exception):
-    pass
-
-class S3UploadError(Exception):
-    pass
-
-class IngestionPipeline:
-    def __init__(self, filename: str, chunk_size: int, chunk_overlap: int, cust_metadata: Dict[str, Any],
-                 client_id: Optional[str] = None, index_name: Optional[str] = None, 
-                 custom_extraction_document_path: Optional[str] = "", extract_images_tables: bool = False, 
-                 embed_raw_table: bool = False, parent_document_chunk_size: Optional[int] = None, 
-                 parent_document_chunk_overlap: Optional[int] = None, separators: Optional[List[str]] = None, 
-                 chunked_as_parent_child: bool = True, advance_table_filter_flag: bool = False, 
-                 table_confidence_score: int = 20, **kwargs):
+class ChunkProcessor:
+    def __init__(self, filename: str, chunk_size: int, chunk_overlap: int, separators: List[str], 
+                 cust_metadata: dict, client_id: Optional[str], index_name: Optional[str],
+                 parent_doc_id_key: str, extract_images_tables: Optional[bool], chunked_as_parent_child: Optional[bool], 
+                 custom_metadata: dict, table_confidence_score: Optional[int], custom_extraction_document_path: Optional[str], 
+                 embed_raw_table: Optional[bool], parent_document_chunk_size: Optional[int], parent_document_chunk_overlap: Optional[int], 
+                 advance_table_filter_flag: Optional[bool], custom_textract_loader: bool, file_type: str, 
+                 is_unstructured_loader_enabled: bool, splitter_type: str):
         self.filename = filename
         self.chunk_size = chunk_size
         self.chunk_overlap = chunk_overlap
-        self.separators = separators or ["\n\n", "\n", " ", ""]
+        self.separators = separators
         self.cust_metadata = cust_metadata
-        self.index_name = index_name
         self.client_id = client_id
-        self.parent_doc_id_key = "docinsight_parent_doc_id"
+        self.index_name = index_name
+        self.parent_doc_id_key = parent_doc_id_key
         self.extract_images_tables = extract_images_tables
         self.chunked_as_parent_child = chunked_as_parent_child
-        self.custom_metadata = {}
+        self.custom_metadata = custom_metadata
         self.table_confidence_score = table_confidence_score
         self.custom_extraction_document_path = custom_extraction_document_path
         self.embed_raw_table = embed_raw_table
         self.parent_document_chunk_size = parent_document_chunk_size
         self.parent_document_chunk_overlap = parent_document_chunk_overlap
         self.advance_table_filter_flag = advance_table_filter_flag
-        self.custom_textract_loader = False
-        self.file_type = self._filetype_identification()
-        self.is_unstructured_loader_enabled = UNSTRUCTURED_EXCEL_LOADER_ENABLED
-        self.splitter_type = kwargs.get("splitter_type", "RCT")  # Default to Recursive Character Text Splitter
+        self.custom_textract_loader = custom_textract_loader
+        self.file_type = file_type
+        self.is_unstructured_loader_enabled = is_unstructured_loader_enabled
+        self.splitter_type = splitter_type
 
-        # Initialize chunk processor
-        self.chunk_processor = ChunkProcessor(
-            filename=self.filename,
-            chunk_size=self.chunk_size,
-            chunk_overlap=self.chunk_overlap,
-            separators=self.separators,
-            cust_metadata=self.cust_metadata,
-            client_id=self.client_id,
-            index_name=self.index_name,
-            parent_doc_id_key=self.parent_doc_id_key,
-            extract_images_tables=self.extract_images_tables,
-            chunked_as_parent_child=self.chunked_as_parent_child,
-            custom_metadata=self.custom_metadata,
-            table_confidence_score=self.table_confidence_score,
-            custom_extraction_document_path=self.custom_extraction_document_path,
-            embed_raw_table=self.embed_raw_table,
-            parent_document_chunk_size=self.parent_document_chunk_size,
-            parent_document_chunk_overlap=self.parent_document_chunk_overlap,
-            advance_table_filter_flag=self.advance_table_filter_flag,
-            custom_textract_loader=self.custom_textract_loader,
-            file_type=self.file_type,
-            is_unstructured_loader_enabled=self.is_unstructured_loader_enabled,
-            splitter_type=self.splitter_type
-        )
+    def _updating_metadata_for_word(self, doc_list: list):
+        final_list = []
+        for index_number, item in enumerate(doc_list):
+            item["page"] = index_number
+            final_list.append(item)
+        return final_list
 
-        # Initialize document loader with the chunk processor
-        self.document_loader = DocumentLoader(
-            filename=self.filename, 
-            file_type=self.file_type,
-            chunk_processor=self.chunk_processor
-        )
+    def _get_page_metadata(self, metadata, keys_to_exclude_for_ppt, batch=0):
+        updated_metadata = []
+        for index, item in enumerate(metadata):
+            custom_metadata = {}
+            for key, value in item.items():
+                if key in keys_to_exclude_for_ppt:
+                    pass
+                else:
+                    if key == "page" and self.file_type in [".pdf"] and not TEXTRACT_ENABLED:
+                        custom_metadata[key] = value + 1
+                    elif key == "page" and self.file_type in [".docx"]:
+                        custom_metadata[key] = value + 1
+                    elif key == "page_number" and self.file_type in [".pptx", ".ppt"]:
+                        custom_metadata["page"] = value
+                    else:
+                        custom_metadata[key] = value
+            custom_metadata = {
+                **dict(self.cust_metadata.items()),
+                **dict(custom_metadata.items()),
+                "batch": batch,
+                "chunk_no": index,
+            }
+            updated_metadata.append(custom_metadata)
+        return updated_metadata
 
-    def _filetype_identification(self) -> str:
-        return pathlib.Path(self.filename).suffix
-
-    async def process_files(self) -> Dict[str, Any]:
-        try:
-            parent_documents, documents = (
-                await self.document_loader._get_documents()
-                if not self.is_unstructured_loader_enabled
-                else self.chunk_processor._get_documents_from_unstructured_loader()
-            )
-
-            large_file = len(documents) > 16
-            batch_size = 16
-            keys_to_exclude_for_ppt = [
-                "file_directory", "last_modified", "category", "filetype", "source",
-                "text_as_html", "page_name",
-            ]
-
-            if not large_file:
-                page_content = [doc.page_content for doc in documents]
-                page_metadata = [doc.metadata for doc in documents]
-                updated_metadata = (
-                    self.chunk_processor._updating_metadata_for_word(page_metadata)
-                    if self.file_type == ".docx" else page_metadata
+    def _table_title_merge(self, pages):
+        i = 1
+        while i < len(pages):
+            current_page = pages[i]
+            previous_page = pages[i - 1]
+            current_page_number = current_page.metadata.get("page_number")
+            previous_page_number = previous_page.metadata.get("page_number")
+            if (
+                current_page.metadata.get("category") == "Table"
+                and previous_page.metadata.get("category") == "Title"
+                and current_page_number == previous_page_number
+            ):
+                current_page.page_content = (
+                    f"{previous_page.page_content} {current_page.page_content}"
                 )
-                metadata = self.chunk_processor._get_page_metadata(updated_metadata, keys_to_exclude_for_ppt)
+                current_page.metadata.pop("text_as_html", None)
+                pages.pop(i - 1)
+                i = max(0, i - 1)
             else:
-                page_content = [doc.page_content for doc in documents]
-                page_metadata = [doc.metadata for doc in documents]
-                metadata = [
-                    self.chunk_processor._get_page_metadata(
-                        page_metadata[i:i + batch_size], keys_to_exclude_for_ppt, batch=i // batch_size
-                    ) for i in range(0, len(page_metadata), batch_size)
-                ]
+                i += 1
+        return pages
 
-            if self.chunked_as_parent_child and parent_documents:
-                await self._store_parent_documents(parent_documents)
+    def _get_table_text_elements(self, pages):
+        table_elements = []
+        text_elements = []
+        for page in pages:
+            if page.metadata["category"] == "Table":
+                table_elements.append(page)
+            else:
+                text_elements.append(page)
+        return table_elements, text_elements
 
-            return {"page_content": page_content, "metadata": metadata, "large_file": large_file}
+    def _process_and_refine_text_elements(self, text_elements):
+        temptext = ""
+        delete_indices = set([])
+        for i in range(1, len(text_elements)):
+            prev_page = text_elements[i - 1]
+            current_page = text_elements[i]
+            if current_page.metadata.get("page_number") == prev_page.metadata.get(
+                "page_number"
+            ):
+                if current_page.metadata.get("category") == "NarrativeText":
+                    if prev_page.metadata.get("category") == "NarrativeText":
+                        continue
+                    else:
+                        delete_indices.add(i - 1)
+                        if temptext != "":
+                            current_page.page_content = (
+                                temptext + " " + current_page.page_content
+                            )
+                        else:
+                            current_page.page_content = (
+                                prev_page.page_content + " " + current_page.page_content
+                            )
+                        temptext = ""
+                else:
+                    delete_indices.add(i)
+                    if prev_page.metadata.get("category") == "NarrativeText":
+                        temptext += (
+                            prev_page.page_content + " " + current_page.page_content
+                        )
+                        delete_indices.add(i - 1)
+                    else:
+                        temptext += " " + current_page.page_content
+            else:
+                if temptext != "":
+                    prev_page.metadata["category"] = "NarrativeText"
+                    prev_page.page_content = temptext
+                    temptext = ""
+                    delete_indices.remove(i - 1)
+        delete_indices = list(delete_indices)
+        delete_indices.sort(reverse=True)
+        for index in delete_indices:
+            del text_elements[index]
+        return text_elements
 
+    def _process_unstructured_metadata(self, text_elements, table_elements):
+        desired_keys = ["source", "page_number", "category"]
+        for element in text_elements:
+            element.metadata = {
+                key: element.metadata[key]
+                for key in desired_keys
+                if key in element.metadata
+            }
+        for element in table_elements:
+            element.metadata = {
+                key: element.metadata[key]
+                for key in desired_keys
+                if key in element.metadata
+            }
+        for page in text_elements:
+            page.metadata["page"] = page.metadata.pop("page_number")
+        for page in table_elements:
+            page.metadata["page"] = page.metadata.pop("page_number")
+        return text_elements, table_elements
+
+    def _get_documents_from_unstructured_loader(self):
+        loader = UnstructuredFileLoader(
+            self.filename, mode="elements", strategy="hi_res"
+        )
+        pages = loader.load()
+        pages = self._table_title_merge(pages)
+        table_elements, text_elements = self._get_table_text_elements(pages)
+        text_elements = self._process_and_refine_text_elements(text_elements)
+        text_elements, table_elements = self._process_unstructured_metadata(
+            text_elements, table_elements
+        )
+        parent_documents, documents = self._get_documents_chunk(text_elements)
+        documents.extend(table_elements)
+        return parent_documents, documents
+
+    def _get_documents_chunk(self, pages):
+        try:
+            if self.splitter_type == "RCT":
+                text_splitter = RecursiveCharacterTextSplitter.from_tiktoken_encoder(
+                    chunk_size=self.chunk_size,
+                    chunk_overlap=self.chunk_overlap,
+                    separators=self.separators,
+                )
+            elif self.splitter_type == "CTS":
+                # Placeholder for CharacterTextSplitter implementation
+                text_splitter = None # Replace with actual CTS implementation
+
+            if self.chunked_as_parent_child:
+                parent_splitter = RecursiveCharacterTextSplitter.from_tiktoken_encoder(
+                    chunk_size=self.parent_document_chunk_size,
+                    chunk_overlap=self.parent_document_chunk_overlap,
+                )
+                parent_documents = parent_splitter.split_documents(pages)
+                docs = []
+                full_docs = []
+                for doc in parent_documents:
+                    _id = "{}/{}/{}".format(self.client_id, self.index_name, uuid.uuid4())
+                    sub_docs = text_splitter.split_documents([doc])
+                    for _doc in sub_docs:
+                        _doc.metadata[self.parent_doc_id_key] = _id
+                    docs.extend(sub_docs)
+                    full_docs.append((_id, doc))
+                return full_docs, docs
+            return [], text_splitter.split_documents(pages)
         except Exception as e:
-            logger.error(e)
-            raise ChunkingException(f"Error while chunking the file: {str(e)}")
-
-    async def _store_parent_documents(self, parent_documents: List[Document]):
-        file_store = S3DocStore(PARENT_CHUNKS_BUCKET_NAME)
-        updated_parents_documents = [
-            (path, Document(page_content=document.page_content, metadata={**self.cust_metadata, **document.metadata}))
-            for path, document in parent_documents
-        ]
-        logger.info("Storing parent documents on S3")
-        await file_store.mset(updated_parents_documents)
-        logger.info("Successfully stored parent documents")
-
-    def save_to_parquet(self, page_content: List[str], metadata: List[str], parquet_path: str):
-        parquet_helper = ParquetHelper(page_content, metadata, parquet_path)
-        parquet_helper.create_parquet()
+            logger.error(str(e))
+            raise ChunkingException(f"Error while creating the chunks: {str(e)}")
