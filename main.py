@@ -1,3 +1,10 @@
+import json
+import pandas as pd
+from concurrent.futures import ThreadPoolExecutor
+from ingest_pipeline.utils.custom_loguru import logger
+from ingest_pipeline.parquet_helper import ParquetHelper
+from ingest_pipeline.external_apis import ias_openai_embeddings  # Assuming this is where the function is
+
 class EmbeddingLoader:
     def __init__(self, parquet_path, engine, client_id, x_vsl_client_id=None, bearer_token=None, max_retries=3):
         self.parquet_path = parquet_path
@@ -6,7 +13,8 @@ class EmbeddingLoader:
         self.x_vsl_client_id = x_vsl_client_id
         self.bearer_token = bearer_token
         self.max_retries = max_retries
-        self.df = pd.read_parquet(parquet_path)
+        self.df = ParquetHelper.load_parquet(parquet_path)
+
     def process_row(self, texts):
         for attempt in range(self.max_retries):
             try:
@@ -17,7 +25,7 @@ class EmbeddingLoader:
                 if attempt == self.max_retries - 1:
                     return None, str(e)
         return None, "Maximum retries exceeded"
- 
+
     def update_dataframe(self, idx, embeddings_list, error_message=None):
         if error_message:
             self.df.at[idx, 'embedding'] = error_message
@@ -25,7 +33,7 @@ class EmbeddingLoader:
         else:
             self.df.at[idx, 'embedding'] = json.dumps(embeddings_list)
             self.df.at[idx, 'status'] = 'success'
- 
+
     def process_parquet(self):
         with ThreadPoolExecutor(max_workers=5) as executor:
             futures = []
@@ -41,5 +49,5 @@ class EmbeddingLoader:
                         self.update_dataframe(idx, embeddings)
                 except Exception as e:
                     logger.error(f"Error in future for index {idx}: {str(e)}")
-        self.df.to_parquet(self.parquet_path, index=False)
+        ParquetHelper.save_parquet(self.df, self.parquet_path)
         print(f"Updated Parquet file saved at {self.parquet_path}")
