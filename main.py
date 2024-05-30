@@ -1,13 +1,66 @@
-  for doc in parent_documents:
-                    _id = "{}/{}/{}".format(self.client_id, self.index_name, uuid.uuid4())
-                    sub_docs = text_splitter.split_documents([doc])
- 
-                    for _doc in sub_docs:
-                        _doc.metadata[self.parent_doc_id_key] = _id
- 
-                    docs.extend(sub_docs)
-                    full_docs.append((_id, doc))
- 
-                return full_docs, docs
- 
-            return [], text_splitter.split_documents(pages)
+{
+  "Comment": "State Machine to ensure all embeddings are created for parquet file",
+  "StartAt": "ProcessParquetFile",
+  "States": {
+    "ProcessParquetFile": {
+      "Type": "Task",
+      "Resource": "arn:aws:lambda:REGION:ACCOUNT_ID:function:ProcessParquetLambda",
+      "ResultPath": "$.processResult",
+      "Next": "CheckFileType"
+    },
+    "CheckFileType": {
+      "Type": "Choice",
+      "Choices": [
+        {
+          "Variable": "$.processResult.fileType",
+          "StringEquals": "parquet",
+          "Next": "LoadParquetAndProcess"
+        },
+        {
+          "Or": [
+            {
+              "Variable": "$.processResult.fileType",
+              "StringEquals": "csv"
+            },
+            {
+              "Variable": "$.processResult.fileType",
+              "StringEquals": "xlsx"
+            }
+          ],
+          "Next": "Success"
+        }
+      ],
+      "Default": "Fail"
+    },
+    "LoadParquetAndProcess": {
+      "Type": "Task",
+      "Resource": "arn:aws:lambda:REGION:ACCOUNT_ID:function:ProcessLambda",
+      "ResultPath": "$.lambdaResult",
+      "Next": "CheckCompletion"
+    },
+    "CheckCompletion": {
+      "Type": "Choice",
+      "Choices": [
+        {
+          "Variable": "$.lambdaResult.complete",
+          "BooleanEquals": true,
+          "Next": "Success"
+        },
+        {
+          "Variable": "$.lambdaResult.complete",
+          "BooleanEquals": false,
+          "Next": "LoadParquetAndProcess"
+        }
+      ],
+      "Default": "Fail"
+    },
+    "Success": {
+      "Type": "Succeed"
+    },
+    "Fail": {
+      "Type": "Fail",
+      "Error": "ProcessFailed",
+      "Cause": "The embeddings creation process failed."
+    }
+  }
+}
