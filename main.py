@@ -1,34 +1,13 @@
-Statement:
-  - Effect: Allow
-    Action:
-      - logs:CreateLogGroup
-      - logs:CreateLogStream
-      - logs:PutLogEvents
-    Resource:
-      - !Sub "arn:aws:logs:*:${AWS::AccountId}:log-group:/aws/lambda/${Env}-vsl-${Name}-ingestion-embedding*"
-      - !Sub "arn:aws:logs:*:${AWS::AccountId}:log-group:/aws/lambda/${Env}-vsl-${Name}-ingestion-store*"
-      - !Sub "arn:aws:logs:*:${AWS::AccountId}:log-group:/aws/states/${Env}-vsl-${Name}-ingestion*"
-  - Effect: Allow
-    Action:
-      - ec2:DescribeNetworkInterfaces
-      - ec2:CreateNetworkInterface
-      - ec2:DeleteNetworkInterface
-      - ec2:DescribeInstances
-      - ec2:AttachNetworkInterface
-    Resource: "*"
-  - Effect: Allow
-    Action:
-      - "secretsmanager:GetSecretValue"
-    Resource: !Sub "arn:aws:secretsmanager:*:${AWS::AccountId}:secret:${Env}-vsl-${Name}-secrets*"
-  - Effect: Allow
-    Action:
-      - "lambda:InvokeFunction"
-    Resource:
-      - !Sub "arn:aws:lambda:*:${AWS::AccountId}:function:${Env}-vsl-${Name}-ingestion-process"
-      - !Sub "arn:aws:lambda:*:${AWS::AccountId}:function:${Env}-vsl-${Name}-ingestion-embedding"
-      - !Sub "arn:aws:lambda:*:${AWS::AccountId}:function:${Env}-vsl-${Name}-ingestion-store"
-  - Effect: Allow
-    Action:
-      - sqs:*
-      - sqs:GetQueueUrl
-    Resource: !Sub "arn:aws:sqs:*:${AWS::AccountId}:${Env}-vsl-${Name}-*"
+  for doc in parent_documents:
+                    _id = "{}/{}/{}".format(self.client_id, self.index_name, uuid.uuid4())
+                    sub_docs = text_splitter.split_documents([doc])
+ 
+                    for _doc in sub_docs:
+                        _doc.metadata[self.parent_doc_id_key] = _id
+ 
+                    docs.extend(sub_docs)
+                    full_docs.append((_id, doc))
+ 
+                return full_docs, docs
+ 
+            return [], text_splitter.split_documents(pages)
