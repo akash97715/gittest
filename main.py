@@ -1,1 +1,54 @@
-Resource handler returned message: "Resource of type 'Stack set operation [5d27fc24-edc3-4531-a453-2c9233c5d003] was unexpectedly stopped or failed. status reason(s): [ResourceLogicalId:IngestionStack, ResourceType:AWS::CloudFormation::Stack, ResourceStatusReason:Embedded stack arn:aws:cloudformation:us-east-1:420737321821:stack/StackSet-sbx-poc-1-vsl-docinsight-stackset-caab3ad8-4118-4bd3-b785-acf8-IngestionStack-WNQJ20BHEMSH/d0f3ddd0-1e73-11ef-80e3-0afff9ea8c57 was not successfully created: Validation failed for following resources: [IngestProcessLambda, IngestEmbeddingLambda, IngestStoreLambda].]' with identifier 'sbx-poc-1-vsl-docinsight-stackset:604ae410-e4b7-4e2a-932b-b987019b9644' did not stabilize." (RequestToken: d34c2877-2430-7af4-88a3-1ef5603fd5c3, HandlerErrorCode: NotStabilized)
+Statement:
+              - Effect: Allow
+                Action:
+                  - logs:CreateLogGroup
+                  - logs:CreateLogStream
+                  - logs:PutLogEvents
+                Resource: arn:aws:logs:*:*:*
+              - Effect: Allow
+                Action:
+                  - logs:CreateLogGroup
+                  - logs:CreateLogStream
+                  - logs:PutLogEvents
+                Resource: !Sub "arn:aws:logs:*:${AWS::AccountId}:log-group:/aws/lambda/${Env}-vsl-${Name}-ingestion-embedding*"
+              - Effect: Allow
+                Action:
+                  - logs:CreateLogGroup
+                  - logs:CreateLogStream
+                  - logs:PutLogEvents
+                Resource: !Sub "arn:aws:logs:*:${AWS::AccountId}:log-group:/aws/lambda/${Env}-vsl-${Name}-ingestion-store*"
+              - Effect: Allow
+                Action:
+                  - logs:CreateLogGroup
+                  - logs:CreateLogStream
+                  - logs:PutLogEvents
+                Resource: !Sub "arn:aws:logs:*:${AWS::AccountId}:log-group:/aws/states/${Env}-vsl-${Name}-ingestion*"
+              - Effect: Allow
+                Action:
+                  - ec2:DescribeNetworkInterfaces
+                  - ec2:CreateNetworkInterface
+                  - ec2:DeleteNetworkInterface
+                  - ec2:DescribeInstances
+                  - ec2:AttachNetworkInterface
+                Resource: "*"
+              - Effect: Allow
+                Action:
+                  - "secretsmanager:GetSecretValue"
+                Resource: !Sub "arn:aws:secretsmanager:*:${AWS::AccountId}:secret:${Env}-vsl-${Name}-secrets*"
+              - Effect: Allow
+                Action:
+                  - "lambda:InvokeFunction"
+                Resource: !Sub "arn:aws:lambda:*:${AWS::AccountId}:function:${Env}-vsl-${Name}-ingestion-process"
+              - Effect: Allow
+                Action:
+                  - "lambda:InvokeFunction"
+                Resource: !Sub "arn:aws:lambda:*:${AWS::AccountId}:function:${Env}-vsl-${Name}-ingestion-embedding"
+              - Effect: Allow
+                Action:
+                  - "lambda:InvokeFunction"
+                Resource: !Sub "arn:aws:lambda:*:${AWS::AccountId}:function:${Env}-vsl-${Name}-ingestion-store"
+              - Effect: Allow
+                Action:
+                  - sqs:*
+                  - sqs:GetQueueUrl
+                Resource: !Sub "arn:aws:sqs:*:${AWS::AccountId}:${Env}-vsl-${Name}-*"
