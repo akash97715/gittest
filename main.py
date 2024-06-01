@@ -1,19 +1,17 @@
-  IngestionStack:
-    Type: AWS::CloudFormation::Stack
+DocinsightIngestStateMachine:
+    Type: "AWS::StepFunctions::StateMachine"
+    DependsOn:
+      - IngestionProcessTabularDataLambda
+      - IngestionProcessNonTabularDataLambda
+      - IngestionEmbeddingLambda
+      - IngestionStoreLambda
     Properties:
-      TemplateURL: !Ref IngestionNestedTemplateURL
-      TimeoutInMinutes: 60
-      Parameters:
-        Env: !Ref Env
-        DefaultEnv: !Ref DefaultEnv
-        Name: !Ref Name
-        CfnBucketName: !Ref CfnBucketName
-        StepFunctionDefinitionS3ObjKey: !Ref StepFunctionDefinitionS3ObjKey
-        IngestionProcessTabularDataLambdaImageUri: !Ref IngestionProcessTabularDataLambdaImageUri
-        IngestionProcessNonTabularDataLambdaImageUri: !Ref IngestionProcessNonTabularDataLambdaImageUri
-        IngestionEmbeddingLambdaImageUri: !Ref IngestionEmbeddingLambdaImageUri
-        IngestionStoreLambdaImageUri: !Ref IngestionStoreLambdaImageUri
-        IngestionInvokeLambdaImageUri: !Ref IngestionInvokeLambdaImageUri
-        CostCenterID: !Ref CostCenterID
-        PrimaryOwner: !Ref PrimaryOwner
-        SecondaryOwner: !Ref SecondaryOwner
+      StateMachineName: !Sub ${Env}-vsl-${Name}-ingestion-process
+      DefinitionS3Location:
+        Bucket: !Ref CfnBucketName
+        Key: !Ref StepFunctionDefinitionS3ObjKey
+      DefinitionSubstitutions:
+        IngestionProcessNonTabularDataLambdaArn: !GetAtt IngestionProcessNonTabularDataLambda.Arn
+        IngestionEmbeddingLambdaArn: !GetAtt IngestionEmbeddingLambda.Arn
+        IngestionStoreLambdaArn: !GetAtt IngestionStoreLambda.Arn
+      RoleArn: !Sub "arn:aws:iam::${AWS::AccountId}:role/CUSPFE-ias-${Env}-vsl-${Name}-ingestion-process"
