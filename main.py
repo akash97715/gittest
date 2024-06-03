@@ -1,8 +1,21 @@
-POST kibana_sample_data_ecommerce/_explain/EVz1Q3sBgg5eWQP6RSte
+POST kibana_sample_data_ecommerce/_search
 {
   "query": {
-    "match": {
-      "customer_first_name": "Mary"
+    "bool": {
+      "must": [
+        {
+          "match": {
+            "docs": "what is there in docs"
+          }
+        }
+      ],
+      "filter": [
+        {
+          "term": {
+            "metadata.md5": "7268768"
+          }
+        }
+      ]
     }
   }
 }
