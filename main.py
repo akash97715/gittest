@@ -1,21 +1,18 @@
-POST kibana_sample_data_ecommerce/_search
 {
-  "query": {
-    "bool": {
-      "must": [
-        {
-          "match": {
-            "docs": "what is there in docs"
-          }
-        }
-      ],
-      "filter": [
-        {
-          "term": {
-            "metadata.md5": "7268768"
-          }
-        }
-      ]
-    }
+  "took": 1,
+  "timed_out": false,
+  "_shards": {
+    "total": 5,
+    "successful": 5,
+    "skipped": 0,
+    "failed": 0
+  },
+  "hits": {
+    "total": {
+      "value": 0,
+      "relation": "eq"
+    },
+    "max_score": null,
+    "hits": []
   }
 }
