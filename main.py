@@ -1,11 +1,1 @@
-POST kibana_sample_data_ecommerce/_search
-{
-  "query": {
-    "more_like_this": {
-      "fields": ["docs"],
-      "like": "what is there in docs",
-      "min_term_freq": 1,
-      "min_doc_freq": 1
-    }
-  }
-}
+kl=vector_db.similarity_search(test_query,kwargs={"filter":{'terms': { "metadata.md5":["3863033b4e4ff29fe6125b2d2efcae9e"]}},"k":400})
