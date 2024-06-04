@@ -1,22 +1,14 @@
-PUT /my_index/_mapping
-{
-    "properties": {
-        "vector_field": {
-            "type": "nested",
-            "properties": {
-                "space_type": {
-                    "type": "nested",
-                    "properties": {
-                        "new_property": {
-                            "type": "text"
-                        },
-                        "existing_property": {
-                            "type": "integer",
-                            "null_value": 0  // Example of modifying an existing property
-                        }
-                    }
-                }
+PUT /cosinesimilarity/_mapping
+{"properties": {"vector_field": {
+          "type": "knn_vector",
+          "dimension": 1536,
+          "method": {
+            "engine": "nmslib",
+            "space_type": "l2",
+            "name": "hnsw",
+            "parameters": {
+              "ef_construction": 512,
+              "m": 16
             }
-        }
-    }
-}
+          }
+        }}}
