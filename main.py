@@ -1,12 +1,22 @@
-PUT /spacetype/_mapping
+PUT /my_index/_mapping
 {
     "properties": {
-        "new_field": {
-            "type": "text"
-        },
-        "existing_field": {
-            "type": "keyword",
-            "ignore_above": 256
+        "vector_field": {
+            "type": "nested",
+            "properties": {
+                "space_type": {
+                    "type": "nested",
+                    "properties": {
+                        "new_property": {
+                            "type": "text"
+                        },
+                        "existing_property": {
+                            "type": "integer",
+                            "null_value": 0  // Example of modifying an existing property
+                        }
+                    }
+                }
+            }
         }
     }
 }
