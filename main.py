@@ -1,9 +1,10 @@
 import numpy as np
 import matplotlib.pyplot as plt
 from sklearn.feature_extraction.text import TfidfVectorizer
+from sklearn.decomposition import PCA
 from sklearn.metrics.pairwise import cosine_similarity
 
-def plot_detailed_cosine_similarity(query, sentences):
+def plot_vector_distances(query, sentences):
     # Combine query and sentences into one list
     texts = [query] + sentences
     
@@ -14,25 +15,29 @@ def plot_detailed_cosine_similarity(query, sentences):
     # Calculate cosine similarities
     cosine_similarities = cosine_similarity(tfidf_matrix[0:1], tfidf_matrix[1:]).flatten()
     
-    # Plot the similarities with detailed visualization
+    # Reduce dimensionality using PCA
+    pca = PCA(n_components=2)
+    pca_result = pca.fit_transform(tfidf_matrix.toarray())
+    
+    # Plot the vectors in 2D space
     plt.figure(figsize=(12, 8))
-    sentence_indices = np.arange(1, len(sentences) + 1)
-    bar_colors = plt.cm.viridis(cosine_similarities)
+    plt.scatter(pca_result[:, 0], pca_result[:, 1], color='blue')
     
-    bars = plt.bar(sentence_indices, cosine_similarities, color=bar_colors)
-    plt.colorbar(plt.cm.ScalarMappable(cmap='viridis'), label='Cosine Similarity')
+    # Annotate the points
+    labels = ['Query'] + [f'Sentence {i+1}' for i in range(len(sentences))]
+    for i, label in enumerate(labels):
+        plt.annotate(label, (pca_result[i, 0], pca_result[i, 1]), fontsize=12)
     
-    plt.xlabel('Sentence Index')
-    plt.ylabel('Cosine Similarity')
-    plt.title('Cosine Similarity between Query and Sentences')
-    plt.xticks(sentence_indices, [f'Sentence {i}' for i in sentence_indices])
-    plt.ylim(0, 1)
+    # Draw arrows from the query to each sentence
+    query_point = pca_result[0]
+    for i in range(1, len(pca_result)):
+        plt.arrow(query_point[0], query_point[1], pca_result[i, 0] - query_point[0], pca_result[i, 1] - query_point[1],
+                  color='red', alpha=0.5, head_width=0.05, head_length=0.1)
     
-    # Add text annotations to display similarity values
-    for bar, similarity in zip(bars, cosine_similarities):
-        yval = bar.get_height()
-        plt.text(bar.get_x() + bar.get_width()/2, yval + 0.01, round(similarity, 2), ha='center', va='bottom')
-    
+    plt.title('2D PCA Plot of Text Vectors')
+    plt.xlabel('PCA Component 1')
+    plt.ylabel('PCA Component 2')
+    plt.grid(True)
     plt.show()
 
 # Example usage
@@ -44,4 +49,4 @@ sentences = [
     "This is a sample query."
 ]
 
-plot_detailed_cosine_similarity(query, sentences)
+plot_vector_distances(query, sentences)
