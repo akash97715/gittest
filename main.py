@@ -10,7 +10,7 @@ headers = {
     'Content-Type': 'application/json',
     'Authorization': 'Bearer 0001vbxb5RewQrgpFWgJ51L9kTri'
 }
-data = {
+base_data = {
     "user_query": "what is there in document",
     "context": [],
     "embedding_engine": "text-embedding-ada-002",
@@ -29,20 +29,24 @@ data = {
 
 # Function to make the request with backoff
 @backoff.on_exception(backoff.expo, requests.exceptions.RequestException, max_tries=3)
-def make_request():
+def make_request(data):
     response = requests.post(url, headers=headers, json=data)
     response.raise_for_status()  # Raise an exception for HTTP error codes
     return response.json()
 
 def hit_endpoint(num_attempts, max_retries):
     @backoff.on_exception(backoff.expo, requests.exceptions.RequestException, max_tries=max_retries)
-    def request_with_retries():
-        return make_request()
-
+    def request_with_retries(data):
+        return make_request(data)
+    
     results = []
-    for _ in range(num_attempts):
+    for i in range(num_attempts):
+        # Modify the user_query to ensure it's unique
+        unique_data = base_data.copy()
+        unique_data['user_query'] = f"{base_data['user_query']} hello{i}"
+        
         try:
-            result = request_with_retries()
+            result = request_with_retries(unique_data)
             results.append(result)
         except requests.exceptions.RequestException as e:
             print(f"Request failed after {max_retries} retries: {e}")
