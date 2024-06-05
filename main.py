@@ -1,29 +1,13 @@
-PUT /test-mapping
 {
-  "settings": {
-    "index": {
-      "number_of_shards": 5,
-      "knn.algo_param.ef_search": 512,
-      "provided_name": "cosinesimilarity",
-      "knn": true,
-      "number_of_replicas": 1
-    }
-  },
-  "mappings": {
-    "properties": {
-      "vector_field": {
-        "type": "knn_vector",
-        "dimension": 1536,
-        "method": {
-          "engine": "nmslib",
-          "space_type": "cosinesimil",
-          "name": "hnsw",
-          "parameters": {
-            "ef_construction": 512,
-            "m": 16
-          }
-        }
+  "error": {
+    "root_cause": [
+      {
+        "type": "illegal_argument_exception",
+        "reason": "unknown setting [index.provided_name] please check that any required plugins are installed, or check the breaking changes documentation for removed settings"
       }
-    }
-  }
+    ],
+    "type": "illegal_argument_exception",
+    "reason": "unknown setting [index.provided_name] please check that any required plugins are installed, or check the breaking changes documentation for removed settings"
+  },
+  "status": 400
 }
