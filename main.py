@@ -1,4 +1,4 @@
-PUT /your_index_name
+PUT /test-mapping
 {
   "mappings": {
     "properties": {
@@ -18,3 +18,18 @@ PUT /your_index_name
     }
   }
 }
+"settings": {
+      "index": {
+        "number_of_shards": "5",
+        "knn.algo_param": {
+          "ef_search": "512"
+        },
+        "provided_name": "cosinesimilarity",
+        "knn": "true",
+        "creation_date": "1717486629927",
+        "number_of_replicas": "1",
+        "uuid": "StnsNGhBRBK7-eEreRTdpQ",
+        "version": {
+          "created": "136267827"
+        }
+      }
