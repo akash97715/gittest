@@ -1,10 +1,7 @@
-async def invoke_retrieval_qa(
-    db,
-    client_id,
-    x_vsl_client_id,
-    bearer_auth,
-    final_index_dict,
-    rw,
-    request:fastapi_request,
-    index_name: str
-):
+docs = vector_db.similarity_search_with_relevance_scores(
+    query=rw.user_query,
+    k=rw.num_of_citations,
+    score_threshold=score_threshold,
+    space_type=space_type,
+    **({'pre_filter': search_kwargs, 'search_type': 'painless_scripting'} if search_type == 'painless_scripting' else {'filter': search_kwargs})
+)
