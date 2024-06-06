@@ -1,12 +1,12 @@
-[12:59 PM] Deep, Akash (External)
+import uuid
+
+client_id = 'your_client_id_or_uuid'
+index_name = 'your_index_name'
+
 id_key = "{}/{}/{}".format(
-                    self.client_id, self.index_name, uuid.uuid4()
-                )
-[12:59 PM] Deep, Akash (External)
-    uuid.UUID(hex=client_id)
+    client_id if client_id.isdigit() else str(uuid.UUID(client_id)), 
+    index_name, 
+    uuid.uuid4()
+)
 
-  File "C:\Program Files\Python311\Lib\uuid.py", line 178, in __init__
-
-    raise ValueError('badly formed hexadecimal UUID string')
-
-ValueError: badly formed hexadecimal UUID string
+print(id_key)
