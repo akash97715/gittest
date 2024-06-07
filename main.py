@@ -1,19 +1,39 @@
-search_kwargs_dict = {'filter': search_kwargs}
-
-if rw.search_type == 'painless_scripting':
-    search_kwargs_dict = {'pre_filter': search_kwargs, 'search_type': 'painless_scripting'}
-    if rw.space_type:
-        search_kwargs_dict['space_type'] = rw.space_type
-
-search_params = {
-    'query': rw.user_query,
-    'k': rw.num_of_citations,
-    'score_threshold': score_threshold,
-    **search_kwargs_dict
+POST /_reindex
+{
+  "source": {
+    "index": "temp-restore-index"
+  },
+  "dest": {
+    "index": "test-mapping-updated"
+  }
 }
 
-# Print or log the search parameters
-print("Search parameters:", search_params)
 
-# Perform the search
-docs = vector_db.similarity_search_with_score(**search_params)
+PUT /test-mapping
+{
+  "settings": {
+    "index": {
+      "number_of_shards": 5,
+      "knn.algo_param.ef_search": 512,
+      "knn": true,
+      "number_of_replicas": 1
+    }
+  },
+  "mappings": {
+    "properties": {
+      "vector_field": {
+        "type": "knn_vector",
+        "dimension": 1536,
+        "method": {
+          "engine": "nmslib",
+          "space_type": "cosinesimil",
+          "name": "hnsw",
+          "parameters": {
+            "ef_construction": 512,
+            "m": 16
+          }
+        }
+      }
+    }
+  }
+}
