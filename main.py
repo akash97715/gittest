@@ -20,3 +20,22 @@ def embed_cluster_texts(texts):
     df["embd"] = list(text_embeddings_np)  # Store embeddings as a list in the DataFrame
     df["cluster"] = cluster_labels  # Store cluster labels
     return df
+
+
+def embed(texts):
+    print("TEXTS==============================",texts)
+    """
+    Generate embeddings for a list of text documents.
+ 
+    This function assumes the existence of an `embd` object with a method `embed_documents`
+    that takes a list of texts and returns their embeddings.
+ 
+    Parameters:
+    - texts: List[str], a list of text documents to be embedded.
+ 
+    Returns:
+    - numpy.ndarray: An array of embeddings for the given text documents.
+    """
+    text_embeddings = embd.embed_documents(texts)
+    text_embeddings_np = np.array(text_embeddings)
+    return text_embeddings_np
