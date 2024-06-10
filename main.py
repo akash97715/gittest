@@ -1,3 +1,22 @@
----------------------------------------------------------------------------TypeError                                 Traceback (most recent call last)File d:\agentenv\Lib\site-packages\pydantic\main.py:343, in pydantic.main.BaseModel.__init__()  TypeError: __dict__ must be set to a dictionary, not a 'NoneType' The above exception was the direct cause of the following exception: TypeError                                 Traceback (most recent call last)Cell In[7], line 19      1 from langchain_core.messages import (      2     AIMessage,      3     AIMessageChunk,   (...)     17     ToolMessageChunk,     18 )---> 19 ias_chat_model = IAS_ChatModel(     20     engine="gpt-4",     21     temperature=0.7,     22     max_tokens=150,     23     user_query="Your user query here",     24     min_response_token=10,     25     system_message=None,     26     client_id="your_client_id",     27     x_vsl_client_id="your_x_vsl_client_id",
-...
-     39 ) File d:\agentenv\Lib\site-packages\pydantic\main.py:345, in pydantic.main.BaseModel.__init__()  TypeError: Model values must be a dict; you may not have returned a dictionary from a root validato
+ias_chat_model = IAS_ChatModel(
+    engine="gpt-4",
+    temperature=0.7,
+    max_tokens=150,
+    user_query="Your user query here",
+    min_response_token=10,
+    system_message=None,
+    client_id="your_client_id",
+    x_vsl_client_id="your_x_vsl_client_id",
+    bearer_token="your_bearer_token",
+    context=[],
+    openai_proxy=None,
+    request_timeout=None,
+    max_retries=2,
+    streaming=False,
+    n=1,
+    tiktoken_model_name=None,
+    default_headers=None,
+    default_query=None,
+    http_client=None,
+    http_async_client=None
+)
