@@ -1,417 +1,263 @@
-from pydantic import BaseModel, Field, root_validator, SecretStr
-from typing import List, Dict, Optional, Any, Union, Tuple, Sequence, Callable, Iterator, AsyncIterator, Literal
-from some_module import BaseChatModel, BaseMessage, ChatResult, ChatGeneration, ChatGenerationChunk, convert_message_to_dict, convert_dict_to_message, AIMessageChunk, UsageMetadata, LangSmithParams, PydanticToolsParser, JsonOutputKeyToolsParser, PydanticOutputParser, JsonOutputParser, RunnablePassthrough, RunnableMap, Runnable, get_from_dict_or_env, convert_to_openai_function, convert_to_openai_tool, build_extra_kwargs, get_pydantic_field_names, ias_openai_chat_completion_with_tools, ensure_config, generate_from_stream, agenerate_from_stream
-
-class IAS_ChatModel(BaseChatModel, BaseModel):
-    engine: str
-    temperature: float
-    max_tokens: int
-    user_query: str
-    total_consumed_token: List[int] = Field(default_factory=list)
-    min_response_token: int
-    system_message: Optional[str] = None
-    client_id: Optional[str] = None
-    x_vsl_client_id: Optional[str] = None
-    bearer_token: Optional[str] = None
-    context: Optional[list] = None
-
-    openai_proxy: Optional[str] = None
-    request_timeout: Union[float, Tuple[float, float], Any, None] = None
-    max_retries: int = 2
-    streaming: bool = False
-    n: int = 1
-    tiktoken_model_name: Optional[str] = None
-    default_headers: Union[Dict[str, str], None] = None
-    default_query: Union[Dict[str, object], None] = None
-    http_client: Union[Any, None] = None
-    http_async_client: Union[Any, None] = None
-
-    class Config:
-        arbitrary_types_allowed = True
-
-    @root_validator(pre=True)
-    def build_extra(cls, values: Dict[str, Any]) -> Dict[str, Any]:
-        all_required_field_names = get_pydantic_field_names(cls)
-        extra = values.get("model_kwargs", {})
-        values["model_kwargs"] = build_extra_kwargs(extra, values, all_required_field_names)
-        return values
-
-    @root_validator()
-    def validate_environment(cls, values: Dict) -> Dict:
-        values["openai_proxy"] = get_from_dict_or_env(values, "openai_proxy", "OPENAI_PROXY", default="")
-        return values
-
-    def _create_message_dicts(self, messages: List[BaseMessage], stop: Optional[List[str]]) -> Tuple[List[Dict[str, Any]], Dict[str, Any]]:
-        params = self._default_params
-        if stop is not None:
-            if "stop" in params:
-                raise ValueError("`stop` found in both the input and default params.")
-            params["stop"] = stop
-        message_dicts = [convert_message_to_dict(m) for m in messages]
-        return message_dicts, params
-
-    async def _agenerate(self, messages: List[BaseMessage], stop: Optional[List[str]] = None, run_manager: Optional[AsyncCallbackManagerForLLMRun] = None, **kwargs: Any) -> ChatResult:
-        messages_dict = [convert_message_to_dict(s) for s in messages]
-
-        if self.context:
-            chat_history = create_chat_history_array(self.context)
-            messages_dict[1:1] = chat_history
-
-        if not is_anthropic_model(str(self.engine)):
-            all_msgs = ""
-            for message in messages_dict:
-                all_msgs += str(message["content"])
-
-            token_consumed = (
-                self.get_num_tokens(
-                    (
-                        "" + all_msgs + self.user_query + json.dumps(kwargs["tools"])
-                        if kwargs["tools"]
-                        else ""
-                    )
-                )
-                + self.min_response_token
-            )
-            if self.max_tokens - token_consumed <= 0:
-                token_consumed = 0
-
-            logger.info(f"total token by system_message, user_query, kwargs[tools] is - {token_consumed}")
-        else:
-            token_consumed = 0
-
-        response, total_token_completion = await ias_openai_chat_completion_with_tools(
-            self.engine,
-            self.temperature,
-            self.max_tokens - token_consumed,
-            self.client_id,
-            self.x_vsl_client_id,
-            self.bearer_token,
-            messages_dict,
-            kwargs["tools"],
-            "auto",
-        )
-        logger.debug(f"Total tokens consumed: {total_token_completion}")
-
-        self.total_consumed_token.append(total_token_completion)
-
-        return self._create_chat_result(response)
-
-    def _generate(self, messages: List[BaseMessage], stop: Optional[List[str]] = None, run_manager: Optional[CallbackManagerForLLMRun] = None, **kwargs: Any) -> ChatResult:
-        if self.streaming:
-            stream_iter = self._stream(messages, stop=stop, run_manager=run_manager, **kwargs)
-            return generate_from_stream(stream_iter)
-        message_dicts, params = self._create_message_dicts(messages, stop)
-        params = {**params, **kwargs}
-        response = self.client.create(messages=message_dicts, **params)
-        return self._create_chat_result(response)
-
-    def _create_chat_result(self, response: Union[dict, openai.BaseModel, str]) -> ChatResult:
-        generations = []
-
-        gen = ChatGeneration(
-            message=convert_dict_to_message(response),
-            generation_info=dict(finish_reason="stop"),
-        )
-        generations.append(gen)
-        llm_output = {
-            "token_usage": 0,
-            "model_name": self.engine,
-        }
-        return ChatResult(generations=generations, llm_output=llm_output)
-
-    @property
-    def _llm_type(self) -> str:
-        return "IAS_OpenAI"
-
-    @property
-    def _default_params(self) -> Dict[str, Any]:
-        params = {
-            "model": self.engine,
-            "stream": self.streaming,
-            "n": self.n,
-            "temperature": self.temperature,
-        }
-        if self.max_tokens is not None:
-            params["max_tokens"] = self.max_tokens
-        return params
-
-    def _combine_llm_outputs(self, llm_outputs: List[Optional[dict]]) -> dict:
-        overall_token_usage: dict = {}
-        system_fingerprint = None
-        for output in llm_outputs:
-            if output is None:
-                continue
-            token_usage = output["token_usage"]
-            if token_usage is not None:
-                for k, v in token_usage.items():
-                    if k in overall_token_usage:
-                        overall_token_usage[k] += v
-                    else:
-                        overall_token_usage[k] = v
-            if system_fingerprint is None:
-                system_fingerprint = output.get("system_fingerprint")
-        combined = {"token_usage": overall_token_usage, "model_name": self.engine}
-        if system_fingerprint:
-            combined["system_fingerprint"] = system_fingerprint
-        return combined
-
-    def _stream(self, messages: List[BaseMessage], stop: Optional[List[str]] = None, run_manager: Optional[CallbackManagerForLLMRun] = None, **kwargs: Any) -> Iterator[ChatGenerationChunk]:
-        message_dicts, params = self._create_message_dicts(messages, stop)
-        params = {**params, **kwargs, "stream": True}
-
-        default_chunk_class = AIMessageChunk
-        with self.client.create(messages=message_dicts, **params) as response:
-            for chunk in response:
-                if not isinstance(chunk, dict):
-                    chunk = chunk.model_dump()
-                if len(chunk["choices"]) == 0:
-                    if token_usage := chunk.get("usage"):
-                        usage_metadata = UsageMetadata(
-                            input_tokens=token_usage.get("prompt_tokens", 0),
-                            output_tokens=token_usage.get("completion_tokens", 0),
-                            total_tokens=token_usage.get("total_tokens", 0),
-                        )
-                        chunk = ChatGenerationChunk(
-                            message=default_chunk_class(
-                                content="", usage_metadata=usage_metadata
-                            )
-                        )
-                    else:
-                        continue
-                else:
-                    choice = chunk["choices"][0]
-                    if choice["delta"] is None:
-                        continue
-                    chunk = _convert_delta_to_message_chunk(
-                        choice["delta"], default_chunk_class
-                    )
-                    generation_info = {}
-                    if finish_reason := choice.get("finish_reason"):
-                        generation_info["finish_reason"] = finish_reason
-                    logprobs = choice.get("logprobs")
-                    if logprobs:
-                        generation_info["logprobs"] = logprobs
-                    default_chunk_class = chunk.__class__
-                    chunk = ChatGenerationChunk(
-                        message=chunk, generation_info=generation_info or None
-                    )
-                if run_manager:
-                    run_manager.on_llm_new_token(
-                        chunk.text, chunk=chunk, logprobs=logprobs
-                    )
-                yield chunk
-
-    async def _astream(self, messages: List[BaseMessage], stop: Optional[List[str]] = None, run_manager: Optional[AsyncCallbackManagerForLLMRun] = None, **kwargs: Any) -> AsyncIterator[ChatGenerationChunk]:
-        message_dicts, params = self._create_message_dicts(messages, stop)
-        params = {**params, **kwargs, "stream": True}
-
-        default_chunk_class = AIMessageChunk
-        response = await self.async_client.create(messages=message_dicts, **params)
-        async with response:
-            async for chunk in response:
-                if not isinstance(chunk, dict):
-                    chunk = chunk.model_dump()
-                if len(chunk["choices"]) == 0:
-                    if token_usage := chunk.get("usage"):
-                        usage_metadata = UsageMetadata(
-                            input_tokens=token_usage.get("prompt_tokens", 0),
-                            output_tokens=token_usage.get("completion_tokens", 0),
-                            total_tokens=token_usage.get("total_tokens", 0),
-                        )
-                        chunk = ChatGenerationChunk(
-                            message=default_chunk_class(
-                                content="", usage_metadata=usage_metadata
-                            )
-                        )
-                    else:
-                        continue
-                else:
-                    choice = chunk["choices"][0]
-                    if choice["delta"] is None:
-                        continue
-                    chunk = _convert_delta_to_message_chunk(
-                        choice["delta"], default_chunk_class
-                    )
-                    generation_info = {}
-                    if finish_reason := choice.get("finish_reason"):
-                        generation_info["finish_reason"] = finish_reason
-                    logprobs = choice.get("logprobs")
-                    if logprobs:
-                        generation_info["logprobs"] = logprobs
-                    default_chunk_class = chunk.__class__
-                    chunk = ChatGenerationChunk(
-                        message=chunk, generation_info=generation_info or None
-                    )
-                if run_manager:
-                    await run_manager.on_llm_new_token(
-                        token=chunk.text, chunk=chunk, logprobs=logprobs
-                    )
-                yield chunk
-
-    def get_token_ids(self, text: str) -> List[int]:
-        if self.custom_get_token_ids is not None:
-            return self.custom_get_token_ids(text)
-        _, encoding_model = self._get_encoding_model()
-        return encoding_model.encode(text)
-
-    def get_num_tokens_from_messages(self, messages: List[BaseMessage]) -> int:
-        model, encoding = self._get_encoding_model()
-        tokens_per_message = 3 if model.startswith("gpt-3.5-turbo") or model.startswith("gpt-4") else 4
-        tokens_per_name = 1 if model.startswith("gpt-3.5-turbo") or model.startswith("gpt-4") else -1
-        num_tokens = 0
-        messages_dict = [convert_message_to_dict(m) for m in messages]
-        for message in messages_dict:
-            num_tokens += tokens_per_message
-            for key, value in message.items():
-                num_tokens += len(encoding.encode(str(value)))
-                if key == "name":
-                    num_tokens += tokens_per_name
-        num_tokens += 3
-        return num_tokens
-
-    def bind_functions(
-        self,
-        functions: Sequence[Union[Dict[str, Any], Type[BaseModel], Callable, BaseTool]],
-        function_call: Optional[Union[_FunctionCall, str, Literal["auto", "none"]]] = None,
-        **kwargs: Any,
-    ) -> Runnable[LanguageModelInput, BaseMessage]:
-        formatted_functions = [convert_to_openai_function(fn) for fn in functions]
-        if function_call is not None:
-            function_call = (
-                {"name": function_call}
-                if isinstance(function_call, str) and function_call not in ("auto", "none")
-                else function_call
-            )
-            if isinstance(function_call, dict) and len(formatted_functions) != 1:
-                raise ValueError(
-                    "When specifying `function_call`, you must provide exactly one function."
-                )
-            if (
-                isinstance(function_call, dict)
-                and formatted_functions[0]["name"] != function_call["name"]
-            ):
-                raise ValueError(
-                    f"Function call {function_call} was specified, but the only provided function was {formatted_functions[0]['name']}."
-                )
-            kwargs = {**kwargs, "function_call": function_call}
-        return super().bind(
-            functions=formatted_functions,
-            **kwargs,
-        )
-
-    def bind_tools(
-        self,
-        tools: Sequence[Union[Dict[str, Any], Type[BaseModel], Callable, BaseTool]],
-        *,
-        tool_choice: Optional[Union[dict, str, Literal["auto", "none", "required", "any"], bool]] = None,
-        **kwargs: Any,
-    ) -> Runnable[LanguageModelInput, BaseMessage]:
-        formatted_tools = [convert_to_openai_tool(tool) for tool in tools]
-        if tool_choice:
-            if isinstance(tool_choice, str):
-                if tool_choice not in ("auto", "none", "any", "required"):
-                    tool_choice = {
-                        "type": "function",
-                        "function": {"name": tool_choice},
-                    }
-                if tool_choice == "any":
-                    tool_choice = "required"
-            elif isinstance(tool_choice, bool):
-                if len(tools) > 1:
-                    raise ValueError(
-                        "tool_choice=True can only be used when a single tool is passed in, received {len(tools)} tools."
-                    )
-                tool_choice = {
-                    "type": "function",
-                    "function": {"name": formatted_tools[0]["function"]["name"]},
-                }
-            elif isinstance(tool_choice, dict):
-                tool_names = [
-                    formatted_tool["function"]["name"]
-                    for formatted_tool in formatted_tools
-                ]
-                if not any(
-                    tool_name == tool_choice["function"]["name"]
-                    for tool_name in tool_names
-                ):
-                    raise ValueError(
-                        f"Tool choice {tool_choice} was specified, but the only provided tools were {tool_names}."
-                    )
-            else:
-                raise ValueError(
-                    f"Unrecognized tool_choice type. Expected str, bool or dict. Received: {tool_choice}"
-                )
-            kwargs["tool_choice"] = tool_choice
-        return super().bind(tools=formatted_tools, **kwargs)
-
-    @overload
-    def with_structured_output(
-        self,
-        schema: Optional[_DictOrPydanticClass] = None,
-        *,
-        method: Literal["function_calling", "json_mode"] = "function_calling",
-        include_raw: Literal[True] = True,
-        **kwargs: Any,
-    ) -> Runnable[LanguageModelInput, _AllReturnType]:
-        ...
-
-    @overload
-    def with_structured_output(
-        self,
-        schema: Optional[_DictOrPydanticClass] = None,
-        *,
-        method: Literal["function_calling", "json_mode"] = "function_calling",
-        include_raw: Literal[False] = False,
-        **kwargs: Any,
-    ) -> Runnable[LanguageModelInput, _DictOrPydantic]:
-        ...
-
-    def with_structured_output(
-        self,
-        schema: Optional[_DictOrPydanticClass] = None,
-        *,
-        method: Literal["function_calling", "json_mode"] = "function_calling",
-        include_raw: bool = False,
-        **kwargs: Any,
-    ) -> Runnable[LanguageModelInput, _DictOrPydantic]:
-        if kwargs:
-            raise ValueError(f"Received unsupported arguments {kwargs}")
-        is_pydantic_schema = _is_pydantic_class(schema)
-        if method == "function_calling":
-            if schema is None:
-                raise ValueError(
-                    "schema must be specified when method is 'function_calling'. Received None."
-                )
-            llm = self.bind_tools([schema], tool_choice=True)
-            if is_pydantic_schema:
-                output_parser: OutputParserLike = PydanticToolsParser(
-                    tools=[schema], first_tool_only=True
-                )
-            else:
-                key_name = convert_to_openai_tool(schema)["function"]["name"]
-                output_parser = JsonOutputKeyToolsParser(
-                    key_name=key_name, first_tool_only=True
-                )
-        elif method == "json_mode":
-            llm = self.bind(response_format={"type": "json_object"})
-            output_parser = (
-                PydanticOutputParser(pydantic_object=schema)
-                if is_pydantic_schema
-                else JsonOutputParser()
-            )
-        else:
-            raise ValueError(
-                f"Unrecognized method argument. Expected one of 'function_calling' or 'json_format'. Received: '{method}'"
-            )
-
-        if include_raw:
-            parser_assign = RunnablePassthrough.assign(
-                parsed=itemgetter("raw") | output_parser, parsing_error=lambda _: None
-            )
-            parser_none = RunnablePassthrough.assign(parsed=lambda _: None)
-            parser_with_fallback = parser_assign.with_fallbacks(
-                [parser_none], exception_key="parsing_error"
-            )
-            return RunnableMap(raw=llm) | parser_with_fallback
-        else:
-            return llm | output_parser
+---------------------------------------------------------------------------AttributeError                            Traceback (most recent call last)Cell In[11],
+line 8
+     
+1
+import pprint     
+3
+inputs = {     
+4
+     "messages": [     
+5
+         ("user", "What does Lilian Weng say about the types of agent memory?"),     
+6
+     ]     
+7
+}---->
+8
+for output in graph.stream(inputs):     
+9
+     for key, value in output.items():    
+10
+         pprint.pprint(f"Output from node '{key}':") File
+d:\agentenv\Lib\site-packages\langgraph\pregel\__init__.py:963
+, in Pregel.stream(self, input, config, stream_mode, output_keys, input_keys, interrupt_before, interrupt_after, debug)   
+960
+         del fut, task   
+962
+# panic on failure or timeout-->
+963
+_panic_or_proceed(done, inflight, step)   
+964
+# don't keep futures around in memory longer than needed   
+965
+del done, inflight, futures File
+d:\agentenv\Lib\site-packages\langgraph\pregel\__init__.py:1489
+, in _panic_or_proceed(done, inflight, step)  
+1487
+             inflight.pop().cancel()  
+1488
+         # raise the exception->
+1489
+         raise exc  
+1491
+if inflight:  
+1492
+     # if we got here means we timed out  
+1493
+     while inflight:  
+1494
+         # cancel all pending tasks  File
+C:\Program
+Files\Python311\Lib\concurrent\futures\thread.py:58, in _WorkItem.run(self)    
+55
+     return    
+57
+try:--->
+58
+     result = self.fn(*self.args, **self.kwargs)    
+59
+except BaseException as exc:    
+60
+     self.future.set_exception(exc) File
+d:\agentenv\Lib\site-packages\langgraph\pregel\retry.py:66
+, in run_with_retry(task, retry_policy)    
+64
+task.writes.clear()    
+65
+# run the task--->
+66
+task.proc.invoke(task.input, task.config)    
+67
+# if successful, end    
+68
+break  File
+d:\agentenv\Lib\site-packages\langchain_core\runnables\base.py:2493
+, in RunnableSequence.invoke(self, input, config, **kwargs)  
+2489
+config = patch_config(  
+2490
+     config, callbacks=run_manager.get_child(f"seq:step:{i+1}")  
+2491
+)  
+2492
+if i == 0:->
+2493
+     input = step.invoke(input, config, **kwargs)  
+2494
+else:  
+2495
+     input = step.invoke(input, config) File
+d:\agentenv\Lib\site-packages\langgraph\utils.py:95
+, in RunnableCallable.invoke(self, input, config, **kwargs)    
+93
+     if accepts_config(self.func):    
+94
+         kwargs["config"] = config--->
+95
+     ret = context.run(self.func, input, **kwargs)    
+96
+if isinstance(ret, Runnable) and self.recurse:    
+97
+     return ret.invoke(input, config) Cell In[8],
+line 90
+    
+88
+model = llm    
+89
+model = model.bind_tools(tools)--->
+90
+response = model.invoke(messages)    
+91
+# We return a list, because this will get added to the existing list    
+92
+return {"messages": [response]} File
+d:\agentenv\Lib\site-packages\langchain_core\runnables\base.py:4558
+, in RunnableBindingBase.invoke(self, input, config, **kwargs)  
+4552
+def invoke(  
+4553
+     self,  
+4554
+     input: Input,  
+4555
+     config: Optional[RunnableConfig] = None,  
+4556
+     **kwargs: Optional[Any],  
+4557
+) -> Output:->
+4558
+     return self.bound.invoke(  
+4559
+         input,  
+4560
+         self._merge_configs(config),  
+4561
+         **{**self.kwargs, **kwargs},  
+4562
+     ) File
+d:\agentenv\Lib\site-packages\langchain_core\language_models\chat_models.py:170
+, in BaseChatModel.invoke(self, input, config, stop, **kwargs)   
+159
+def invoke(   
+160
+     self,   
+161
+     input: LanguageModelInput,   (...)   
+165
+     **kwargs: Any,   
+166
+) -> BaseMessage:   
+167
+     config = ensure_config(config)   
+168
+     return cast(   
+169
+         ChatGeneration,-->
+170
+         self.generate_prompt(   
+171
+             [self._convert_input(input)],   
+172
+             stop=stop,   
+173
+             callbacks=config.get("callbacks"),   
+174
+             tags=config.get("tags"),   
+175
+             metadata=config.get("metadata"),   
+176
+             run_name=config.get("run_name"),   
+177
+             run_id=config.pop("run_id", None),   
+178
+             **kwargs,   
+179
+         ).generations[0][0],   
+180
+     ).message File
+d:\agentenv\Lib\site-packages\langchain_core\language_models\chat_models.py:599
+, in BaseChatModel.generate_prompt(self, prompts, stop, callbacks, **kwargs)   
+591
+def generate_prompt(   
+592
+     self,   
+593
+     prompts: List[PromptValue],   (...)   
+596
+     **kwargs: Any,   
+597
+) -> LLMResult:   
+598
+     prompt_messages = [p.to_messages() for p in prompts]-->
+599
+     return self.generate(prompt_messages, stop=stop, callbacks=callbacks, **kwargs) File
+d:\agentenv\Lib\site-packages\langchain_core\language_models\chat_models.py:456
+, in BaseChatModel.generate(self, messages, stop, callbacks, tags, metadata, run_name, run_id, **kwargs)   
+454
+         if run_managers:   
+455
+             run_managers[i].on_llm_error(e, response=LLMResult(generations=[]))-->
+456
+         raise e   
+457
+flattened_outputs = [   
+458
+     LLMResult(generations=[res.generations], llm_output=res.llm_output)  # type: ignore[list-item]   
+459
+     for res in results   
+460
+]   
+461
+llm_output = self._combine_llm_outputs([res.llm_output for res in results]) File
+d:\agentenv\Lib\site-packages\langchain_core\language_models\chat_models.py:446
+, in BaseChatModel.generate(self, messages, stop, callbacks, tags, metadata, run_name, run_id, **kwargs)   
+443
+for i, m in enumerate(messages):   
+444
+     try:   
+445
+         results.append(-->
+446
+             self._generate_with_cache(   
+447
+                 m,   
+448
+                 stop=stop,   
+449
+                 run_manager=run_managers[i] if run_managers else None,   
+450
+                 **kwargs,   
+451
+             )   
+452
+         )   
+453
+     except BaseException as e:   
+454
+         if run_managers: File
+d:\agentenv\Lib\site-packages\langchain_core\language_models\chat_models.py:671
+, in BaseChatModel._generate_with_cache(self, messages, stop, run_manager, **kwargs)   
+669
+else:   
+670
+     if inspect.signature(self._generate).parameters.get("run_manager"):-->
+671
+         result = self._generate(   
+672
+             messages, stop=stop, run_manager=run_manager, **kwargs   
+673
+         )   
+674
+     else:   
+675
+         result = self._generate(messages, stop=stop, **kwargs) File
+d:\langgraphmain\langgraphmain\examples\rag\utils\agentwrapper.py:1060
+, in IAS_ChatModelOpen._generate(self, messages, stop, run_manager, **kwargs)  
+1058
+message_dicts, params = self._create_message_dicts(messages, stop)  
+1059
+params = {**params, **kwargs}->
+1060
+response = self.client.create(messages=message_dicts, **params)  
+1061
+return self._create_chat_result(response)
