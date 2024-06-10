@@ -1,25 +1,67 @@
-@root_validator()
-    def validate_environment(cls, values: Dict) -> Dict:
-        values["openai_proxy"] = get_from_dict_or_env(values, "openai_proxy", "OPENAI_PROXY", default="")
-        client_params = {
-            "api_key": values["bearer_token"],
-            "organization": values["x_vsl_client_id"],
-            "base_url": None,
-            "timeout": values["request_timeout"],
-            "max_retries": values["max_retries"],
-            "default_headers": values["default_headers"],
-            "default_query": values["default_query"],
+async def ias_openai_chat_completion_with_tools(
+    engine: str,
+    temperature: float,
+    max_tokens: int,
+    client_id: str = None,
+    x_vsl_client_id: str = None,
+    bearer_token: str = None,
+    messages: List[BaseMessage] = None,
+    tools: List[BaseTool] = None,
+    tool_choice: str = None,
+) -> str:
+    """
+    Generates a chat completion response for OpenAI model
+    :param token: auth token
+    :param user_message: user's prompt
+    :param engine: model capable for chat completion i.e. gpt*
+    :param temperature: value 0-1 that tells model to be more precise or generative
+    :param max_tokens: max tokens the prompt & response should be. It depends on the model's capacity
+    :return: response from OpenAI model
+    """
+    try:
+        payload = {
+            "engine": engine,
+            "messages": messages,
+            "temperature": temperature,
+            "max_tokens": max_tokens,
+            "tools": tools,
+            "tool_choice": tool_choice,
         }
-        if not values.get("client"):
-            try:
-                import openai
-            except ImportError as e:
-                raise ImportError(
-                    "Could not import openai python package. Please install it with `pip install openai`."
-                ) from e
-            values["client"] = openai.OpenAI(**client_params).chat.completions
-Collapse
-has context menu
-
-
-has context menu
+ 
+        token = await aget_auth_token(bearer_token)
+ 
+        headers = {
+            "Content-Type": "application/json",
+            "Authorization": f"Bearer {token}",
+        }
+        if x_vsl_client_id is not None:
+            headers["x-vsl-client_id"] = x_vsl_client_id
+        elif client_id is not None:
+            headers["x-vsl-client_id"] = client_id
+ 
+        logger.info("Calling chat completion endpoint with tools")
+        logger.info(payload)
+ 
+        response = await httpx_client.request(
+            "post", IAS_OPENAI_CHAT_URL, json=payload, headers=headers
+        )
+ 
+        logger.info("Received response from llm")
+        logger.info(response.json())
+ 
+        if response.status_code != 200:
+            logger.error(
+                f"Error calling OpenAI chat completion API: {response.status_code}, {response.json()}"
+            )
+            raise GenericException(
+                f"Error calling OpenAI chat completion API: {response.status_code}, {response.json()}",
+                status_code=response.status_code,
+            )
+        chat_completion = json.loads(response.json()["result"])
+       
+        total_token_completion=int(response.json()['totalTokens'])
+        return chat_completion,total_token_completion
+    except Exception as e:
+        logger.error("Got the Exception", str(e))
+        # raising backoff exception
+        raise GenericException(e)
