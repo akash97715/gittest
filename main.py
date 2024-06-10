@@ -113,7 +113,7 @@ class IAS_ChatModel(BaseChatModel, BaseModel):
         response, total_token_completion = self.ias_openai_chat_completion_with_tools(
             self.engine,
             self.temperature,
-            self.max_tokens - token_consumed,
+            self.max_tokens,
             self.client_id,
             self.x_vsl_client_id,
             self.bearer_token,
@@ -286,6 +286,91 @@ class IAS_ChatModel(BaseChatModel, BaseModel):
                     )
                 yield chunk
 
+    def bind_functions(
+        self,
+        functions: Sequence[Union[Dict[str, Any], Type[BaseModel], Callable, BaseTool]],
+        function_call: Optional[
+            Union[_FunctionCall, str, Literal["auto", "none"]]
+        ] = None,
+        **kwargs: Any,
+    ) -> Runnable[LanguageModelInput, BaseMessage]:
+        formatted_functions = [convert_to_openai_function(fn) for fn in functions]
+        if function_call is not None:
+            function_call = (
+                {"name": function_call}
+                if isinstance(function_call, str)
+                and function_call not in ("auto", "none")
+                else function_call
+            )
+            if isinstance(function_call, dict) and len(formatted_functions) != 1:
+                raise ValueError(
+                    "When specifying `function_call`, you must provide exactly one "
+                    "function."
+                )
+            if (
+                isinstance(function_call, dict)
+                and formatted_functions[0]["name"] != function_call["name"]
+            ):
+                raise ValueError(
+                    f"Function call {function_call} was specified, but the only "
+                    f"provided function was {formatted_functions[0]['name']}."
+                )
+            kwargs = {**kwargs, "function_call": function_call}
+        return super().bind(
+            functions=formatted_functions,
+            **kwargs,
+        )
+
+    def bind_tools(
+        self,
+        tools: Sequence[Union[Dict[str, Any], Type[BaseModel], Callable, BaseTool]],
+        *,
+        tool_choice: Optional[
+            Union[dict, str, Literal["auto", "none", "required", "any"], bool]
+        ] = None,
+        **kwargs: Any,
+    ) -> Runnable[LanguageModelInput, BaseMessage]:
+        formatted_tools = [convert_to_openai_tool(tool) for tool in tools]
+        if tool_choice:
+            if isinstance(tool_choice, str):
+                if tool_choice not in ("auto", "none", "any", "required"):
+                    tool_choice = {
+                        "type": "function",
+                        "function": {"name": tool_choice},
+                    }
+                if tool_choice == "any":
+                    tool_choice = "required"
+            elif isinstance(tool_choice, bool):
+                if len(tools) > 1:
+                    raise ValueError(
+                        "tool_choice=True can only be used when a single tool is "
+                        f"passed in, received {len(tools)} tools."
+                    )
+                tool_choice = {
+                    "type": "function",
+                    "function": {"name": formatted_tools[0]["function"]["name"]},
+                }
+            elif isinstance(tool_choice, dict):
+                tool_names = [
+                    formatted_tool["function"]["name"]
+                    for formatted_tool in formatted_tools
+                ]
+                if not any(
+                    tool_name == tool_choice["function"]["name"]
+                    for tool_name in tool_names
+                ):
+                    raise ValueError(
+                        f"Tool choice {tool_choice} was specified, but the only "
+                        f"provided tools were {tool_names}."
+                    )
+            else:
+                raise ValueError(
+                    f"Unrecognized tool_choice type. Expected str, bool or dict. "
+                    f"Received: {tool_choice}"
+                )
+            kwargs["tool_choice"] = tool_choice
+        return super().bind(tools=formatted_tools, **kwargs)
+
     async def ias_openai_chat_completion_with_tools(
         self,
         engine: str,
@@ -320,7 +405,7 @@ class IAS_ChatModel(BaseChatModel, BaseModel):
             if x_vsl_client_id is not None:
                 headers["x-vsl-client_id"] = x_vsl_client_id
             elif client_id is not None:
-                headers["x-vsl-client_id"] = client_id
+                headers["x-vsl_client_id"] = client_id
 
             logger.info("Calling chat completion endpoint with tools")
             logger.info(payload)
