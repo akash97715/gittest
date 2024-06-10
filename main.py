@@ -58,6 +58,15 @@ class IAS_ChatModel(BaseChatModel, BaseModel):
             raise ValueError("Either client_id or x_vsl_client_id must be provided")
         return values
 
+    def _create_message_dicts(self, messages: List[BaseMessage], stop: Optional[List[str]]) -> Tuple[List[Dict[str, Any]], Dict[str, Any]]:
+        params = self._default_params
+        if stop is not None:
+            if "stop" in params:
+                raise ValueError("`stop` found in both the input and default params.")
+            params["stop"] = stop
+        message_dicts = [convert_message_to_dict(m) for m in messages]
+        return message_dicts, params
+
     async def _agenerate(self, messages: List[BaseMessage], stop: Optional[List[str]] = None, run_manager: Optional[AsyncCallbackManagerForLLMRun] = None, **kwargs: Any) -> ChatResult:
         messages_dict = [convert_message_to_dict(s) for s in messages]
 
@@ -405,7 +414,7 @@ class IAS_ChatModel(BaseChatModel, BaseModel):
             if x_vsl_client_id is not None:
                 headers["x-vsl-client_id"] = x_vsl_client_id
             elif client_id is not None:
-                headers["x-vsl_client_id"] = client_id
+                headers["x-vsl-client_id"] = client_id
 
             logger.info("Calling chat completion endpoint with tools")
             logger.info(payload)
