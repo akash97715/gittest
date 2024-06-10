@@ -1,80 +1,36 @@
-from pydantic import BaseModel, Field, root_validator
-from typing import List, Dict, Optional, Any, Union, Tuple, Sequence, Callable, Iterator, AsyncIterator, Literal
-import json
-import httpx
-from some_module import (
-    BaseChatModel, BaseMessage, ChatResult, ChatGeneration, ChatGenerationChunk,
-    convert_message_to_dict, convert_dict_to_message, AIMessageChunk, UsageMetadata,
-    LangSmithParams, PydanticToolsParser, JsonOutputKeyToolsParser, PydanticOutputParser,
-    JsonOutputParser, RunnablePassthrough, RunnableMap, Runnable, get_from_dict_or_env,
-    convert_to_openai_function, convert_to_openai_tool, build_extra_kwargs,
-    get_pydantic_field_names, ensure_config, generate_from_stream, agenerate_from_stream,
-    create_chat_history_array, is_anthropic_model
-)
-from another_module import aget_auth_token, IAS_OPENAI_CHAT_URL, logger, GenericException
-
-class IAS_ChatModel(BaseChatModel, BaseModel):
+class IAS_ChatModel(BaseChatModel,BaseModel):
     engine: str
     temperature: float
     max_tokens: int
     user_query: str
     total_consumed_token: List[int] = Field(default_factory=list)
     min_response_token: int
-    system_message: Optional[str] = None
-    client_id: Optional[str] = None
-    x_vsl_client_id: Optional[str] = None
-    bearer_token: Optional[str] = None
-    context: Optional[list] = None
-
-    request_timeout: Union[float, Tuple[float, float], Any, None] = None
-    max_retries: int = 2
-    streaming: bool = False
-    n: int = 1
-    tiktoken_model_name: Optional[str] = None
-    default_headers: Union[Dict[str, str], None] = None
-    default_query: Union[Dict[str, object], None] = None
-    http_client: Union[Any, None] = None
-    http_async_client: Union[Any, None] = None
+    system_message: Optional[str] = (None,)
+    client_id: str = (None,)
+    x_vsl_client_id: str = None
+    bearer_token: str = None
+    context: list = None
 
     class Config:
-        arbitrary_types_allowed = True
+        arbitrary_types_allowed = True    
 
-    @root_validator(pre=True)
-    def build_extra(cls, values: Dict[str, Any]) -> Dict[str, Any]:
-        all_required_field_names = get_pydantic_field_names(cls)
-        extra = values.get("model_kwargs", {})
-        values["model_kwargs"] = build_extra_kwargs(extra, values, all_required_field_names)
-        return values
-
-    @root_validator()
-    def validate_environment(cls, values: Dict) -> Dict:
-        token = get_from_dict_or_env(values, "bearer_token", "BEARER_TOKEN")
-        if not token:
-            raise ValueError("Bearer token is required")
-        values["bearer_token"] = token
-        client_id = values.get("client_id")
-        x_vsl_client_id = values.get("x_vsl_client_id")
-        if not client_id and not x_vsl_client_id:
-            raise ValueError("Either client_id or x_vsl_client_id must be provided")
-        return values
-
-    def _create_message_dicts(self, messages: List[BaseMessage], stop: Optional[List[str]]) -> Tuple[List[Dict[str, Any]], Dict[str, Any]]:
-        params = self._default_params
-        if stop is not None:
-            if "stop" in params:
-                raise ValueError("`stop` found in both the input and default params.")
-            params["stop"] = stop
-        message_dicts = [convert_message_to_dict(m) for m in messages]
-        return message_dicts, params
-
-    async def _agenerate(self, messages: List[BaseMessage], stop: Optional[List[str]] = None, run_manager: Optional[AsyncCallbackManagerForLLMRun] = None, **kwargs: Any) -> ChatResult:
+    async def _agenerate(
+        self,
+        messages: List[BaseMessage],
+        stop: Optional[List[str]] = None,
+        run_manager: Optional[AsyncCallbackManagerForLLMRun] = None,
+        **kwargs: Any,
+    ) -> ChatResult:
+        """Top Level call"""
         messages_dict = [convert_message_to_dict(s) for s in messages]
 
+        # Create chat history array.
         if self.context:
             chat_history = create_chat_history_array(self.context)
             messages_dict[1:1] = chat_history
 
         if not is_anthropic_model(str(self.engine)):
+            # Reduce max token based on token consumed
             all_msgs = ""
             for message in messages_dict:
                 all_msgs += str(message["content"])
@@ -92,11 +48,13 @@ class IAS_ChatModel(BaseChatModel, BaseModel):
             if self.max_tokens - token_consumed <= 0:
                 token_consumed = 0
 
-            logger.info(f"total token by system_message, user_query, kwargs[tools] is - {token_consumed}")
+            logger.info(
+                f"total token by system_message, user_query, kwargs[tools] is - {token_consumed}"
+            )
         else:
             token_consumed = 0
 
-        response, total_token_completion = await self.ias_openai_chat_completion_with_tools(
+        response ,total_token_completion= await ias_openai_chat_completion_with_tools(
             self.engine,
             self.temperature,
             self.max_tokens - token_consumed,
@@ -104,36 +62,29 @@ class IAS_ChatModel(BaseChatModel, BaseModel):
             self.x_vsl_client_id,
             self.bearer_token,
             messages_dict,
-            kwargs.get("tools"),
+            kwargs["tools"],
             "auto",
         )
         logger.debug(f"Total tokens consumed: {total_token_completion}")
-
+        
         self.total_consumed_token.append(total_token_completion)
+
+        
 
         return self._create_chat_result(response)
 
-    def _generate(self, messages: List[BaseMessage], stop: Optional[List[str]] = None, run_manager: Optional[CallbackManagerForLLMRun] = None, **kwargs: Any) -> ChatResult:
-        if self.streaming:
-            stream_iter = self._stream(messages, stop=stop, run_manager=run_manager, **kwargs)
-            return generate_from_stream(stream_iter)
-        message_dicts, params = self._create_message_dicts(messages, stop)
-        params = {**params, **kwargs}
-        response, total_token_completion = self.ias_openai_chat_completion_with_tools(
-            self.engine,
-            self.temperature,
-            self.max_tokens,
-            self.client_id,
-            self.x_vsl_client_id,
-            self.bearer_token,
-            message_dicts,
-            kwargs.get("tools"),
-            "auto",
-        )
-        self.total_consumed_token.append(total_token_completion)
-        return self._create_chat_result(response)
+    def _generate(
+        self,
+        messages: List[BaseMessage],
+        stop: Optional[List[str]] = None,
+        run_manager: Optional[CallbackManagerForLLMRun] = None,
+        **kwargs: Any,
+    ) -> ChatResult:
+        pass
 
-    def _create_chat_result(self, response: Union[dict, Any]) -> ChatResult:
+    def _create_chat_result(
+        self, response: Union[dict, openai.BaseModel, str]
+    ) -> ChatResult:
         generations = []
 
         gen = ChatGeneration(
@@ -149,294 +100,109 @@ class IAS_ChatModel(BaseChatModel, BaseModel):
 
     @property
     def _llm_type(self) -> str:
+        """Get the type of language model used by this chat model."""
         return "IAS_OpenAI"
 
-    @property
-    def _default_params(self) -> Dict[str, Any]:
-        params = {
-            "model": self.engine,
-            "stream": self.streaming,
-            "n": self.n,
-            "temperature": self.temperature,
+
+def create_chat_history_array(context: list) -> list[dict]:
+    chat_context = copy.deepcopy(context)
+    chat_context.reverse()
+    chat_history = []
+
+    for i in range(len(context)):
+        if i % 2 == 0:
+            chat_history.append({"role": "user", "content": chat_context[i]})
+        else:
+            chat_history.append({"role": "assistant", "content": chat_context[i]})
+
+    return chat_history
+
+
+def convert_dict_to_message(_dict: Mapping[str, Any]) -> BaseMessage:
+    """Convert a dictionary to a LangChain message.
+
+    Args:
+        _dict: The dictionary.
+
+    Returns:
+        The LangChain message.
+    """
+    role = _dict.get("role")
+    id_ = _dict.get("id")
+    if role == "user":
+        return HumanMessage(content=_dict.get("content", ""), id=id_)
+    elif role == "assistant":
+        # Fix for azure
+        # Also OpenAI returns None for tool invocations
+        content = _dict.get("content", "") or ""
+        additional_kwargs: Dict = {}
+        if function_call := _dict.get("function_call"):
+            additional_kwargs["function_call"] = dict(function_call)
+        if tool_calls := _dict.get("tool_calls"):
+            additional_kwargs["tool_calls"] = tool_calls
+        return AIMessage(content=content, additional_kwargs=additional_kwargs, id=id_)
+    elif role == "system":
+        return SystemMessage(content=_dict.get("content", ""), id=id_)
+    elif role == "function":
+        return FunctionMessage(
+            content=_dict.get("content", ""), name=_dict.get("name"), id=id_
+        )
+    elif role == "tool":
+        additional_kwargs = {}
+        if "name" in _dict:
+            additional_kwargs["name"] = _dict["name"]
+        return ToolMessage(
+            content=_dict.get("content", ""),
+            tool_call_id=_dict.get("tool_call_id"),
+            additional_kwargs=additional_kwargs,
+            id=id_,
+        )
+    else:
+        return ChatMessage(content=_dict.get("content", ""), role=role, id=id_)
+
+
+def convert_message_to_dict(message: BaseMessage) -> dict:
+    """Convert a LangChain message to a dictionary.
+
+    Args:
+        message: The LangChain message.
+
+    Returns:
+        The dictionary.
+    """
+    message_dict: Dict[str, Any]
+    if isinstance(message, ChatMessage):
+        message_dict = {"role": message.role, "content": message.content}
+    elif isinstance(message, HumanMessage):
+        message_dict = {"role": "user", "content": message.content}
+    elif isinstance(message, AIMessage):
+        message_dict = {"role": "assistant", "content": message.content}
+        if "function_call" in message.additional_kwargs:
+            message_dict["function_call"] = message.additional_kwargs["function_call"]
+            # If function call only, content is None not empty string
+            if message_dict["content"] == None:
+                message_dict["content"] = ""
+        if "tool_calls" in message.additional_kwargs:
+            message_dict["tool_calls"] = message.additional_kwargs["tool_calls"]
+            # If tool calls only, content is None not empty string
+            if message_dict["content"] == None:
+                message_dict["content"] = ""
+    elif isinstance(message, SystemMessage):
+        message_dict = {"role": "system", "content": message.content}
+    elif isinstance(message, FunctionMessage):
+        message_dict = {
+            "role": "function",
+            "content": message.content,
+            "name": message.name,
         }
-        if self.max_tokens is not None:
-            params["max_tokens"] = self.max_tokens
-        return params
-
-    def _combine_llm_outputs(self, llm_outputs: List[Optional[dict]]) -> dict:
-        overall_token_usage: dict = {}
-        system_fingerprint = None
-        for output in llm_outputs:
-            if output is None:
-                continue
-            token_usage = output["token_usage"]
-            if token_usage is not None:
-                for k, v in token_usage.items():
-                    if k in overall_token_usage:
-                        overall_token_usage[k] += v
-                    else:
-                        overall_token_usage[k] = v
-            if system_fingerprint is None:
-                system_fingerprint = output.get("system_fingerprint")
-        combined = {"token_usage": overall_token_usage, "model_name": self.engine}
-        if system_fingerprint:
-            combined["system_fingerprint"] = system_fingerprint
-        return combined
-
-    def _stream(self, messages: List[BaseMessage], stop: Optional[List[str]] = None, run_manager: Optional[CallbackManagerForLLMRun] = None, **kwargs: Any) -> Iterator[ChatGenerationChunk]:
-        message_dicts, params = self._create_message_dicts(messages, stop)
-        params = {**params, **kwargs, "stream": True}
-
-        default_chunk_class = AIMessageChunk
-        for chunk in self.ias_openai_chat_completion_with_tools(
-            self.engine,
-            self.temperature,
-            self.max_tokens,
-            self.client_id,
-            self.x_vsl_client_id,
-            self.bearer_token,
-            message_dicts,
-            kwargs.get("tools"),
-            "auto",
-        ):
-            if not isinstance(chunk, dict):
-                chunk = chunk.model_dump()
-            if len(chunk["choices"]) == 0:
-                if token_usage := chunk.get("usage"):
-                    usage_metadata = UsageMetadata(
-                        input_tokens=token_usage.get("prompt_tokens", 0),
-                        output_tokens=token_usage.get("completion_tokens", 0),
-                        total_tokens=token_usage.get("total_tokens", 0),
-                    )
-                    chunk = ChatGenerationChunk(
-                        message=default_chunk_class(
-                            content="", usage_metadata=usage_metadata
-                        )
-                    )
-                else:
-                    continue
-            else:
-                choice = chunk["choices"][0]
-                if choice["delta"] is None:
-                    continue
-                chunk = _convert_delta_to_message_chunk(
-                    choice["delta"], default_chunk_class
-                )
-                generation_info = {}
-                if finish_reason := choice.get("finish_reason"):
-                    generation_info["finish_reason"] = finish_reason
-                logprobs = choice.get("logprobs")
-                if logprobs:
-                    generation_info["logprobs"] = logprobs
-                default_chunk_class = chunk.__class__
-                chunk = ChatGenerationChunk(
-                    message=chunk, generation_info=generation_info or None
-                )
-            if run_manager:
-                run_manager.on_llm_new_token(
-                    chunk.text, chunk=chunk, logprobs=logprobs
-                )
-            yield chunk
-
-    async def _astream(self, messages: List[BaseMessage], stop: Optional[List[str]] = None, run_manager: Optional[AsyncCallbackManagerForLLMRun] = None, **kwargs: Any) -> AsyncIterator[ChatGenerationChunk]:
-        message_dicts, params = self._create_message_dicts(messages, stop)
-        params = {**params, **kwargs, "stream": True}
-
-        default_chunk_class = AIMessageChunk
-        response, total_token_completion = await self.ias_openai_chat_completion_with_tools(
-            self.engine,
-            self.temperature,
-            self.max_tokens,
-            self.client_id,
-            self.x_vsl_client_id,
-            self.bearer_token,
-            message_dicts,
-            kwargs.get("tools"),
-            "auto",
-        )
-        async with response:
-            async for chunk in response:
-                if not isinstance(chunk, dict):
-                    chunk = chunk.model_dump()
-                if len(chunk["choices"]) == 0:
-                    if token_usage := chunk.get("usage"):
-                        usage_metadata = UsageMetadata(
-                            input_tokens=token_usage.get("prompt_tokens", 0),
-                            output_tokens=token_usage.get("completion_tokens", 0),
-                            total_tokens=token_usage.get("total_tokens", 0),
-                        )
-                        chunk = ChatGenerationChunk(
-                            message=default_chunk_class(
-                                content="", usage_metadata=usage_metadata
-                            )
-                        )
-                    else:
-                        continue
-                else:
-                    choice = chunk["choices"][0]
-                    if choice["delta"] is None:
-                        continue
-                    chunk = _convert_delta_to_message_chunk(
-                        choice["delta"], default_chunk_class
-                    )
-                    generation_info = {}
-                    if finish_reason := choice.get("finish_reason"):
-                        generation_info["finish_reason"] = finish_reason
-                    logprobs = choice.get("logprobs")
-                    if logprobs:
-                        generation_info["logprobs"] = logprobs
-                    default_chunk_class = chunk.__class__
-                    chunk = ChatGenerationChunk(
-                        message=chunk, generation_info=generation_info or None
-                    )
-                if run_manager:
-                    await run_manager.on_llm_new_token(
-                        token=chunk.text, chunk=chunk, logprobs=logprobs
-                    )
-                yield chunk
-
-    def bind_functions(
-        self,
-        functions: Sequence[Union[Dict[str, Any], Type[BaseModel], Callable, BaseTool]],
-        function_call: Optional[
-            Union[_FunctionCall, str, Literal["auto", "none"]]
-        ] = None,
-        **kwargs: Any,
-    ) -> Runnable[LanguageModelInput, BaseMessage]:
-        formatted_functions = [convert_to_openai_function(fn) for fn in functions]
-        if function_call is not None:
-            function_call = (
-                {"name": function_call}
-                if isinstance(function_call, str)
-                and function_call not in ("auto", "none")
-                else function_call
-            )
-            if isinstance(function_call, dict) and len(formatted_functions) != 1:
-                raise ValueError(
-                    "When specifying `function_call`, you must provide exactly one "
-                    "function."
-                )
-            if (
-                isinstance(function_call, dict)
-                and formatted_functions[0]["name"] != function_call["name"]
-            ):
-                raise ValueError(
-                    f"Function call {function_call} was specified, but the only "
-                    f"provided function was {formatted_functions[0]['name']}."
-                )
-            kwargs = {**kwargs, "function_call": function_call}
-        return super().bind(
-            functions=formatted_functions,
-            **kwargs,
-        )
-
-    def bind_tools(
-        self,
-        tools: Sequence[Union[Dict[str, Any], Type[BaseModel], Callable, BaseTool]],
-        *,
-        tool_choice: Optional[
-            Union[dict, str, Literal["auto", "none", "required", "any"], bool]
-        ] = None,
-        **kwargs: Any,
-    ) -> Runnable[LanguageModelInput, BaseMessage]:
-        formatted_tools = [convert_to_openai_tool(tool) for tool in tools]
-        if tool_choice:
-            if isinstance(tool_choice, str):
-                if tool_choice not in ("auto", "none", "any", "required"):
-                    tool_choice = {
-                        "type": "function",
-                        "function": {"name": tool_choice},
-                    }
-                if tool_choice == "any":
-                    tool_choice = "required"
-            elif isinstance(tool_choice, bool):
-                if len(tools) > 1:
-                    raise ValueError(
-                        "tool_choice=True can only be used when a single tool is "
-                        f"passed in, received {len(tools)} tools."
-                    )
-                tool_choice = {
-                    "type": "function",
-                    "function": {"name": formatted_tools[0]["function"]["name"]},
-                }
-            elif isinstance(tool_choice, dict):
-                tool_names = [
-                    formatted_tool["function"]["name"]
-                    for formatted_tool in formatted_tools
-                ]
-                if not any(
-                    tool_name == tool_choice["function"]["name"]
-                    for tool_name in tool_names
-                ):
-                    raise ValueError(
-                        f"Tool choice {tool_choice} was specified, but the only "
-                        f"provided tools were {tool_names}."
-                    )
-            else:
-                raise ValueError(
-                    f"Unrecognized tool_choice type. Expected str, bool or dict. "
-                    f"Received: {tool_choice}"
-                )
-            kwargs["tool_choice"] = tool_choice
-        return super().bind(tools=formatted_tools, **kwargs)
-
-    async def ias_openai_chat_completion_with_tools(
-        self,
-        engine: str,
-        temperature: float,
-        max_tokens: int,
-        client_id: str = None,
-        x_vsl_client_id: str = None,
-        bearer_token: str = None,
-        messages: List[BaseMessage] = None,
-        tools: List[Any] = None,
-        tool_choice: str = None,
-    ) -> str:
-        """
-        Generates a chat completion response for OpenAI model
-        """
-        try:
-            payload = {
-                "engine": engine,
-                "messages": messages,
-                "temperature": temperature,
-                "max_tokens": max_tokens,
-                "tools": tools,
-                "tool_choice": tool_choice,
-            }
-
-            token = await aget_auth_token(bearer_token)
-
-            headers = {
-                "Content-Type": "application/json",
-                "Authorization": f"Bearer {token}",
-            }
-            if x_vsl_client_id is not None:
-                headers["x-vsl_client_id"] = x_vsl_client_id
-            elif client_id is not None:
-                headers["x-vsl_client_id"] = client_id
-
-            logger.info("Calling chat completion endpoint with tools")
-            logger.info(payload)
-
-            async with httpx.AsyncClient() as client:
-                response = await client.post(IAS_OPENAI_CHAT_URL, json=payload, headers=headers)
-
-            logger.info("Received response from llm")
-            logger.info(response.json())
-
-            if response.status_code != 200:
-                logger.error(
-                    f"Error calling OpenAI chat completion API: {response.status_code}, {response.json()}"
-                )
-                raise GenericException(
-                    f"Error calling OpenAI chat completion API: {response.status_code}, {response.json()}",
-                    status_code=response.status_code,
-                )
-            chat_completion = json.loads(response.json()["result"])
-            total_token_completion = int(response.json()['totalTokens'])
-            return chat_completion, total_token_completion
-        except Exception as e:
-            logger.error("Got the Exception", str(e))
-            # raising backoff exception
-            raise GenericException(e)
+    elif isinstance(message, ToolMessage):
+        message_dict = {
+            "role": "tool",
+            "content": message.content,
+            "tool_call_id": message.tool_call_id,
+        }
+    else:
+        raise TypeError(f"Got unknown type {message}")
+    if "name" in message.additional_kwargs:
+        message_dict["name"] = message.additional_kwargs["name"]
+    return message_dict
