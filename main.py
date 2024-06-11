@@ -1,43 +1,61 @@
-from langgraph.graph import END, StateGraph
-from langgraph.prebuilt import ToolNode
+class DynamicWorkflow:
+    def __init__(self, state_class):
+        self.workflow = StateGraph(state_class)
+        self.nodes = {}
+        self.entry_point = None
 
-# Define a new graph
-workflow = StateGraph(AgentState)
+    def add_node(self, name, node):
+        self.workflow.add_node(name, node)
+        self.nodes[name] = node
 
-# Define the nodes we will cycle between
-workflow.add_node("agent", agent)  # agent
+    def set_entry_point(self, entry_point):
+        self.entry_point = entry_point
+        self.workflow.set_entry_point(entry_point)
+
+    def add_edge(self, from_node, to_node):
+        self.workflow.add_edge(from_node, to_node)
+
+    def add_conditional_edges(self, from_node, condition, condition_map):
+        self.workflow.add_conditional_edges(from_node, condition, condition_map)
+
+    def compile(self):
+        return self.workflow.compile()
+
+
+# Example usage:
+def tools_condition():
+    # Define the condition logic
+    pass
+
+# Instantiate the dynamic workflow class
+dynamic_workflow = DynamicWorkflow(AgentState)
+
+# Define nodes
+dynamic_workflow.add_node("agent", agent)
 retrieve = ToolNode([retriever_tool])
-workflow.add_node("retrieve", retrieve)  # retrieval
-workflow.add_node("rewrite", rewrite)  # Re-writing the question
-workflow.add_node(
-    "generate", generate
-)  # Generating a response after we know the documents are relevant
-workflow.add_node("grade", grade_documents)  # Grading the documents
+dynamic_workflow.add_node("retrieve", retrieve)
+dynamic_workflow.add_node("rewrite", rewrite)
+dynamic_workflow.add_node("generate", generate)
+dynamic_workflow.add_node("grade", grade_documents)
 
-# Call agent node to decide to retrieve or not
-workflow.set_entry_point("agent")
+# Set entry point
+dynamic_workflow.set_entry_point("agent")
 
-# Decide whether to retrieve
-workflow.add_conditional_edges(
+# Add conditional edges
+dynamic_workflow.add_conditional_edges(
     "agent",
-    # Assess agent decision
     tools_condition,
     {
-        # Translate the condition outputs to nodes in our graph
         "tools": "retrieve",
-        END: "grade",  # Ensure grading is always called
+        "END": "grade",
     },
 )
 
-# Edges taken after the `action` node is called.
-workflow.add_conditional_edges(
-    "retrieve",
-    # Assess agent decision
-    grade_documents,
-)
-workflow.add_edge("generate", END)
-workflow.add_edge("rewrite", "agent")
-workflow.add_edge("grade", END)  # End the workflow after grading
+# Add regular edges
+dynamic_workflow.add_edge("retrieve", "grade")
+dynamic_workflow.add_edge("generate", "END")
+dynamic_workflow.add_edge("rewrite", "agent")
+dynamic_workflow.add_edge("grade", "END")
 
-# Compile
-graph = workflow.compile()
+# Compile the workflow
+graph = dynamic_workflow.compile()
