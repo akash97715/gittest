@@ -1,61 +1,30 @@
-class DynamicWorkflow:
-    def __init__(self, state_class):
-        self.workflow = StateGraph(state_class)
-        self.nodes = {}
-        self.entry_point = None
-
-    def add_node(self, name, node):
-        self.workflow.add_node(name, node)
-        self.nodes[name] = node
-
-    def set_entry_point(self, entry_point):
-        self.entry_point = entry_point
-        self.workflow.set_entry_point(entry_point)
-
-    def add_edge(self, from_node, to_node):
-        self.workflow.add_edge(from_node, to_node)
-
-    def add_conditional_edges(self, from_node, condition, condition_map):
-        self.workflow.add_conditional_edges(from_node, condition, condition_map)
-
-    def compile(self):
-        return self.workflow.compile()
-
-
-# Example usage:
-def tools_condition():
-    # Define the condition logic
-    pass
-
-# Instantiate the dynamic workflow class
-dynamic_workflow = DynamicWorkflow(AgentState)
-
-# Define nodes
-dynamic_workflow.add_node("agent", agent)
-retrieve = ToolNode([retriever_tool])
-dynamic_workflow.add_node("retrieve", retrieve)
-dynamic_workflow.add_node("rewrite", rewrite)
-dynamic_workflow.add_node("generate", generate)
-dynamic_workflow.add_node("grade", grade_documents)
-
-# Set entry point
-dynamic_workflow.set_entry_point("agent")
-
-# Add conditional edges
-dynamic_workflow.add_conditional_edges(
-    "agent",
-    tools_condition,
-    {
-        "tools": "retrieve",
-        "END": "grade",
-    },
-)
-
-# Add regular edges
-dynamic_workflow.add_edge("retrieve", "grade")
-dynamic_workflow.add_edge("generate", "END")
-dynamic_workflow.add_edge("rewrite", "agent")
-dynamic_workflow.add_edge("grade", "END")
-
-# Compile the workflow
-graph = dynamic_workflow.compile()
+class IAS_ChatModel(BaseChatModel,BaseModel):
+    engine: str ='gpt-4'
+    temperature: float =0.7
+    max_tokens: int
+    streaming: bool = False
+    n: int = 2
+    user_query: str = "Ask me something"
+    total_consumed_token: List[int] = Field(default_factory=list)
+    min_response_token: int =200
+    system_message: Optional[str] = (None,)
+    client_id: str = (None,)
+    x_vsl_client_id: str = None
+    bearer_token: str = None
+    context: list = None
+ 
+    class Config:
+        arbitrary_types_allowed = True    
+    @property
+    def _default_params(self) -> Dict[str, Any]:
+        """Get the default parameters for calling OpenAI API."""
+        params = {
+            "model": self.engine,
+            "stream": self.streaming,
+            "n": self.n,
+            "temperature": self.temperature,
+            **self.model_kwargs,
+        }
+        if self.max_tokens is not None:
+            params["max_tokens"] = self.max_tokens
+        return params
