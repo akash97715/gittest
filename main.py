@@ -12,20 +12,12 @@ async def stream_completion(client, input_request, user_data):
     # url = get_model + "/streaming/completion"
     utc = pytz.utc
     now = datetime.datetime.now(utc)
-    # print(now)
     current_time = now.strftime("%Y-%m-%dT%H:%M:%S.%fZ[UTC]")
-    # print(current_time)
-    # time=datetime.datetime.now()
-    # time= str(time)
     request_time = current_time
-    # print(time)
     headers = {
         "Content-Type": "application/json",
         "Accept": "application/json",
         "Authorization": bearer_token,
-        # "x-agw-client_id": client_id,
-        # "x_agw_api_id": stream_api_key,
-        # "x_agw_request_time": request_time,
     }
     completion_payload = json.dumps(
         {
@@ -53,14 +45,11 @@ async def stream_completion(client, input_request, user_data):
             chunk_list = []
             # iterate for chunks one by one
             async for chunk in response.aiter_lines():
-                # for chunk in response.iter_bytes():
-                if chunk != "":
+                if chunk:
                     data = chunk.split("data:")[1]
                     if data != " [DONE]":
                         response_data = json.loads(data)
-                        # print(response_data)
                         if response_data["choices"][0]["finish_reason"] is None:
-                            # chunks from Vessel should consists of text
                             if "text" in response_data["choices"][0]:
                                 stream_start = True
                                 content_str = response_data["choices"][0]["text"]
@@ -83,9 +72,7 @@ async def stream_completion(client, input_request, user_data):
                                 logger.error(
                                     f"Incomplete data in chunk from vessel", data
                                 )
-                                # raise Exception("Incomplete data in chunk from vessel")
 
-                        # Final chunk should have concatenated response
                         if (
                             response_data["choices"][0]["finish_reason"] == "stop"
                             or response_data["choices"][0]["finish_reason"]
@@ -111,9 +98,7 @@ async def stream_completion(client, input_request, user_data):
         logger.error(f"Exception in stream_completion function: {str(e)}")
         raise e
 
-    # For metering and audit logging in any condition.
     finally:
-        # Compose vessel response for metering and audit logging only if there was some streaming.
         if stream_start:
             final_text = "".join(chunk_list)
             vessel_response = {
