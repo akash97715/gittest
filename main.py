@@ -30,15 +30,18 @@ def get_chat_completion(user_query, token):
         "presence_penalty": 0
     }
 
-    response = requests.post(url, headers=headers, json=data)
+    response = requests.post(url, headers=headers, json=data, stream=True)
 
     if response.status_code == 200:
-        return response.json()
+        for line in response.iter_lines():
+            if line:
+                # Decode the line from bytes to string and print
+                decoded_line = line.decode('utf-8')
+                print(decoded_line)
     else:
-        return {"error": response.status_code, "message": response.text}
+        print({"error": response.status_code, "message": response.text})
 
 # Example usage
 user_query = "Where does Pfizer Main branch located in India?"
 token = "0001sJL7jrAi5IcKnoOEP2p3LYsT"
-response = get_chat_completion(user_query, token)
-print(response)
+get_chat_completion(user_query, token)
