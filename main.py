@@ -1,11 +1,13 @@
 import pytz
- 
- 
+import datetime
+import json
+from httpx import HTTPException
+
 stream_start = False
-   
+
 logger.info("Streaming completion request")
 bearer_token = '0001P1lrDr2KSLQ50S6eqjytIFZp'
-url = "https://mule4api-comm-amer-dev.pfizer.com/vessel-openai-api-v1/chatCompletion"
+url = "http://something"
 # url = get_model + "/streaming/completion"
 utc = pytz.utc
 now = datetime.datetime.now(utc)
@@ -53,7 +55,7 @@ if response.status_code == 200:
             data = chunk.split("data:")[1]
             if data != " [DONE]":
                 response_data = json.loads(data)
-                #print(response_data)
+                # print(response_data)
                 if response_data["choices"][0]["finish_reason"] is None:
                     # chunks from Vessel should consists of text
                     if "text" in response_data["choices"][0]:
@@ -79,7 +81,7 @@ if response.status_code == 200:
                             f"Incomplete data in chunk from vessel", data
                         )
                         # raise Exception("Incomplete data in chunk from vessel")
- 
+
                 # Final chunk should have concatenated response
                 if (
                     response_data["choices"][0]["finish_reason"] == "stop"
@@ -101,7 +103,7 @@ if response.status_code == 200:
 else:
     logger.error(f"Error while receiving chunks from vessel")
     raise HTTPException(status_code=400, detail="Internal Vessel Error")
- 
+
 except Exception as e:
     logger.error(f"Exception in stream_completion function: {str(e)}")
     raise e
