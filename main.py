@@ -1,12 +1,28 @@
-{
-    "security.workspace.trust.untrustedFiles": "open",
-    "editor.minimap.enabled": false,
-    "[python]": {
-        "editor.formatOnType": true,
-        "editor.defaultFormatter": "ms-python.black-formatter",
-        "editor.formatOnSave": true
+curl --location '
+https://vsl-dev.pfizer.com/openai/streaming/chatCompletion'
+\
+--header 'x-agw-client_id: 6f90ab7409494cdfb67e09de2de63334' \
+--header 'Content-Type: application/json' \
+--header 'Authorization: Bearer 0001sJL7jrAi5IcKnoOEP2p3LYsT' \
+--data '{
+    "engine": "gpt-4-32k",
+    "messages": [
+        {
+            "role": "assistant",
+            "content": "You are a digital assistant for Pfizer Inc."
+        },
+        {
+            "role": "user",
+            "content": "Where does Pfizer Main branch located in India?"
+        }
+    ],
+    "temperature": 0,
+    "max_tokens": 100,
+    "n": 1,
+    "stop": ".",
+    "logit_bias": {
+        "2435": -100
     },
-    "workbench.editor.enablePreview": false,
-    "terminal.integrated.scrollback": 10000,
-    "aws.samcli.location": "C:\\Program Files\\Amazon\\AWSSAMCLI\\bin\\sam.cmd"
-}
+    "frequency_penalty": 0,
+    "presence_penalty": 0
+}'
