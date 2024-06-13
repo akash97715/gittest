@@ -1,5 +1,5 @@
 import requests
- 
+
 def get_chat_completion(user_query, token):
     url = 'https://vsl-dev.pfizer.com/openai/streaming/chatCompletion'
     headers = {
@@ -22,7 +22,7 @@ def get_chat_completion(user_query, token):
         "temperature": 0,
         "max_tokens": 100,
         "n": 1,
-        "stream":True,
+        "stream": True,
         "stop": ".",
         "logit_bias": {
             "2435": -100
@@ -30,18 +30,22 @@ def get_chat_completion(user_query, token):
         "frequency_penalty": 0,
         "presence_penalty": 0
     }
- 
-    response = requests.post(url, headers=headers, json=data,stream=True)
- 
-    if response.status_code == 200:
+
+    try:
+        response = requests.post(url, headers=headers, json=data, stream=True)
+        response.raise_for_status()
+        
         for line in response.iter_lines():
             if line:
                 # Decode the line from bytes to string and print
                 decoded_line = line.decode('utf-8')
                 print(decoded_line)
-    else:
-        print({"error": response.status_code, "message": response.text})
- 
+
+    except requests.exceptions.ChunkedEncodingError as e:
+        print(f"Chunked Encoding Error: {e}")
+    except requests.exceptions.RequestException as e:
+        print(f"Request Exception: {e}")
+
 # Example usage
 user_query = "Where does Pfizer Main branch located in India?"
 token = "0001rpo98AHBj95p1AqsRrO9Mdh2"
