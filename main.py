@@ -1,28 +1,44 @@
-curl --location '
-https://vsl-dev.pfizer.com/openai/streaming/chatCompletion'
-\
---header 'x-agw-client_id: 6f90ab7409494cdfb67e09de2de63334' \
---header 'Content-Type: application/json' \
---header 'Authorization: Bearer 0001sJL7jrAi5IcKnoOEP2p3LYsT' \
---data '{
-    "engine": "gpt-4-32k",
-    "messages": [
-        {
-            "role": "assistant",
-            "content": "You are a digital assistant for Pfizer Inc."
+import requests
+
+def get_chat_completion(user_query, token):
+    url = 'https://vsl-dev.pfizer.com/openai/streaming/chatCompletion'
+    headers = {
+        'x-agw-client_id': '6f90ab7409494cdfb67e09de2de63334',
+        'Content-Type': 'application/json',
+        'Authorization': f'Bearer {token}'
+    }
+    data = {
+        "engine": "gpt-4-32k",
+        "messages": [
+            {
+                "role": "assistant",
+                "content": "You are a digital assistant for Pfizer Inc."
+            },
+            {
+                "role": "user",
+                "content": user_query
+            }
+        ],
+        "temperature": 0,
+        "max_tokens": 100,
+        "n": 1,
+        "stop": ".",
+        "logit_bias": {
+            "2435": -100
         },
-        {
-            "role": "user",
-            "content": "Where does Pfizer Main branch located in India?"
-        }
-    ],
-    "temperature": 0,
-    "max_tokens": 100,
-    "n": 1,
-    "stop": ".",
-    "logit_bias": {
-        "2435": -100
-    },
-    "frequency_penalty": 0,
-    "presence_penalty": 0
-}'
+        "frequency_penalty": 0,
+        "presence_penalty": 0
+    }
+
+    response = requests.post(url, headers=headers, json=data)
+
+    if response.status_code == 200:
+        return response.json()
+    else:
+        return {"error": response.status_code, "message": response.text}
+
+# Example usage
+user_query = "Where does Pfizer Main branch located in India?"
+token = "0001sJL7jrAi5IcKnoOEP2p3LYsT"
+response = get_chat_completion(user_query, token)
+print(response)
