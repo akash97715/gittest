@@ -1,5 +1,10 @@
 import httpx
 import json
+import nest_asyncio
+import asyncio
+
+# Apply nest_asyncio to handle nested event loops
+nest_asyncio.apply()
 
 async def get_chat_completion(user_query, token):
     url = 'https://vsl-dev.pfizer.com/openai/streaming/chatCompletion'
@@ -65,8 +70,6 @@ async def get_chat_completion(user_query, token):
                         break
 
 # Example usage
-import asyncio
-
 user_query = "Where does Pfizer Main branch located in India?"
 token = "0001rpo98AHBj95p1AqsRrO9Mdh2"
 
@@ -74,4 +77,5 @@ async def main():
     async for data in get_chat_completion(user_query, token):
         print(data)
 
+# Run the main function using asyncio.run() if not in a nested event loop
 asyncio.run(main())
