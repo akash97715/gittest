@@ -1,12 +1,7 @@
-import httpx
+import requests
 import json
-import nest_asyncio
-import asyncio
 
-# Apply nest_asyncio to handle nested event loops
-nest_asyncio.apply()
-
-async def get_chat_completion(user_query, token):
+def get_chat_completion(user_query, token):
     url = 'https://vsl-dev.pfizer.com/openai/streaming/chatCompletion'
     headers = {
         'x-agw-client_id': '6f90ab7409494cdfb67e09de2de63334',
@@ -39,15 +34,20 @@ async def get_chat_completion(user_query, token):
 
     total_tokens = 0
 
-    async with httpx.AsyncClient() as client:
-        response = await client.post(url, headers=headers, json=data, timeout=None)
-        
+    try:
+        response = requests.post(url, headers=headers, json=data, stream=True)
+        response.raise_for_status()
+
         if response.status_code == 200:
             chunk_list = []
-            async for chunk in response.aiter_lines():
-                if chunk != "":
-                    data = chunk.split("data:")[1].strip()
-                    if data != "[DONE]":
+            for chunk in response.iter_lines():
+                if chunk:
+                    try:
+                        data = chunk.split(b"data:")[1].strip()
+                    except IndexError:
+                        continue  # skip lines that don't have the expected format
+
+                    if data != b"[DONE]":
                         response_data = json.loads(data)
                         if response_data["choices"][0]["finish_reason"] is None:
                             if "text" in response_data["choices"][0]:
@@ -64,18 +64,19 @@ async def get_chat_completion(user_query, token):
                                         "eos": eos,
                                     }
                                 )
-                                yield (f"data: {stream_obj}\n\n")
+                                print(f"data: {stream_obj}\n\n")
                     else:
-                        yield ("data: [DONE]\n\n")
+                        print("data: [DONE]\n\n")
                         break
+    except requests.exceptions.RequestException as e:
+        print(f"An error occurred: {e}")
 
 # Example usage
 user_query = "Where does Pfizer Main branch located in India?"
 token = "0001rpo98AHBj95p1AqsRrO9Mdh2"
 
-async def main():
-    async for data in get_chat_completion(user_query, token):
-        print(data)
+def main():
+    get_chat_completion(user_query, token)
 
-# Run the main function using asyncio.run() if not in a nested event loop
-asyncio.run(main())
+if __name__ == "__main__":
+    main()
