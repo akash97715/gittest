@@ -128,5 +128,10 @@ async def stream_completion(client, input_request, user_data):
                 "engine", "no_engine"
             )
 
-# Call the function in the notebook if needed
-# await stream_completion(client, input_request, user_data)
+# Function to consume the async generator
+async def consume_stream():
+    async for data in stream_completion(client, input_request, user_data):
+        print(data)
+
+# Call the function in the notebook
+# await consume_stream()
