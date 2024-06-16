@@ -7,7 +7,12 @@
 
 
 
-![image](https://github.com/akash97715/gittest/assets/34799343/2c77acd8-fa83-4eb0-aa63-59463461d138)
+
+![image](https://github.com/akash97715/gittest/assets/34799343/be7f90e0-5f64-46ab-8e6b-229af97cce63)
+
+![image](https://github.com/akash97715/gittest/assets/34799343/adb963d6-bad9-43e4-8e06-dbebcc550921)
+
+
 
 
 
