@@ -9,8 +9,8 @@
 
 
 
-![image](https://github.com/akash97715/gittest/assets/34799343/b2c03e6e-783b-4c60-84f4-e470f25f25a5)
-![image](https://github.com/akash97715/gittest/assets/34799343/ebb968a5-7e2f-448e-b928-e0e3cd3b044d)
+![image](https://github.com/akash97715/gittest/assets/34799343/a88c1245-efc9-481f-a930-e96401682fc7)
+
 
 
 
