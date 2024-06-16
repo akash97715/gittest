@@ -15,9 +15,8 @@
 
 
 
-![image](https://github.com/akash97715/gittest/assets/34799343/97d73139-6084-42af-8b61-917d903b54f1)
+![image](https://github.com/akash97715/gittest/assets/34799343/a4b022af-c2f6-4f98-83c4-b21e2f8c2aa0)
 
-![image](https://github.com/akash97715/gittest/assets/34799343/29e14d73-c161-493b-9bb6-49b04c7a59f2)
 
 
 
