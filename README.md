@@ -7,8 +7,8 @@
 
 
 
+![image](https://github.com/akash97715/gittest/assets/34799343/e5de94ca-fb9b-417f-8a34-5afc8857ab82)
 
-![image](https://github.com/akash97715/gittest/assets/34799343/c922e061-5978-455d-8adf-032febc0cbe7)
 
 
 
