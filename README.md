@@ -6,8 +6,8 @@
 <img width="1108" alt="Screenshot 2024-04-05 at 8 50 43 PM" src="https://github.com/akash97715/gittest/assets/34799343/1eef08b5-8526-489a-bef4-c9ec298f3174">
 
 
+![image](https://github.com/akash97715/gittest/assets/34799343/4b4b7b10-7f14-46dd-b7fa-c6dbaf16497c)
 
-![image](https://github.com/akash97715/gittest/assets/34799343/665d20a8-c194-499d-9fe6-ad53a92e37d7)
 
 
 
