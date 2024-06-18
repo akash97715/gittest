@@ -1,11 +1,31 @@
-4. k-NN Score Script
-The k-nearest neighbors (k-NN) score script is used for exact vector similarity searches. It finds the nearest neighbors to a query vector using various distance metrics, including:
+import pandas as pd
 
-Cosine Similarity
-Cosine similarity measures the cosine of the angle between two vectors. It is commonly used in vector space models for text similarity, as it measures the orientation, not the magnitude, of the vectors.
+# Sample DataFrame
+data = {
+    'id': range(100),
+    'value': [f'value_{i}' for i in range(100)]
+}
+df = pd.DataFrame(data)
 
-Cosine Similarity Score: Often used in script scoring or custom implementations to rank documents based on their vector similarity to a query.
-Euclidean Distance
-Euclidean distance measures the straight-line distance between two points in a vector space. It is used in k-NN searches to find the closest vectors to the query vector.
+# Function to process a batch of items
+def process_batch(batch):
+    # Simulate processing
+    responses = [f'response_{item["id"]}' for index, item in batch.iterrows()]
+    return responses
 
-Euclidean Distance Score: Used in exact k-NN and other vector-based similarity searches to calculate the similarity between vectors.
+# Function to update DataFrame with responses
+def update_dataframe(df, indices, responses):
+    for i, response in zip(indices, responses):
+        df.at[i, 'response'] = response
+
+# Main batch processing logic
+batch_size = 15
+df['response'] = None  # Initialize a new column for responses
+
+for start in range(0, len(df), batch_size):
+    end = start + batch_size
+    batch = df.iloc[start:end]
+    responses = process_batch(batch)
+    update_dataframe(df, batch.index, responses)
+
+print(df)
