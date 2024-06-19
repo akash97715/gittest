@@ -40,8 +40,8 @@ class GraphBuilder:
             raise ValueError("Invalid entry point specified.")
 
         end_state_found = any(
-            "END" in process_value for node in self.config["nodes"]
-            for process_value in node.get("condition", {}).get("process", {}).values()
+            value == "END" for node in self.config["nodes"]
+            for value in node.get("condition", {}).get("process", {}).values()
         )
         if not end_state_found:
             raise ValueError("No end state specified in any of the conditional edges.")
@@ -96,43 +96,4 @@ config = {
         { "name": "grade_documents", "method": "POST", "arn": "ASFGAGSDHDSHHDHH-adaHdh" },
         { "name": "generate", "method": "PUT", "arn": "ASFGAGSDHDSHHDHH-adaHdh" },
         { "name": "transform_query", "method": "GET", "arn": "ASFGAGSDHDSHHDHH-adaHdh" },
-        { "name": "decide_to_generate", "method": "GET", "arn": "ASFGAGSDHDSHHDHH-adaHdh" },
-        { "name": "grade_generation_v_documents_and_question", "method": "GET", "arn": "ASFGAGSDHDSHHDHH-adaHdh" }
-    ],
-    "model": "llama3",
-    "entry_point": "retrieve",
-    "nodes": [
-        {
-            "name": "retrieve",
-            "destination": "grade_documents"
-        },
-        {
-            "name": "grade_documents",
-            "condition": {
-                "deciding_fn": "decide_to_generate",
-                "process": {
-                    "transform_query": "transform_query",
-                    "generate": "generate"
-                }
-            }
-        },
-        {
-            "name": "transform_query",
-            "destination": "retrieve"
-        },
-        {
-            "name": "generate",
-            "condition": {
-                "deciding_fn": "grade_generation_v_documents_and_question",
-                "process": {
-                    "not supported": "generate",
-                    "useful": "END",
-                    "not useful": "transform_query"
-                }
-            }
-        }
-    ]
-}
-
-graph_builder = GraphBuilder(config)
-app = graph_builder.compile()
+        { "name": "decide_to
