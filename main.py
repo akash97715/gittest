@@ -1,22 +1,53 @@
---------------------------------------------------------------------------
-ValueError                                Traceback (most recent call last)
-Cell In[18], line 1
-----> 1 graph_builder = GraphBuilder(config)
-      2 app = graph_builder.compile()
-
-Cell In[8], line 47
-     45 self.workflow = StateGraph(GraphState)
-     46 self.lambda_wrappers = {}
----> 47 self._validate_config()
-     48 self._create_lambda_wrappers()
-     49 self._load_config()
-
-Cell In[8], line 68
-     63 end_state_found = any(
-     64     value == END for node in self.config["nodes"]
-     65     for value in node.get("condition", {}).get("process", {}).values()
-     66 )
-     67 if not end_state_found:
----> 68     raise ValueError("No end state specified in any of the conditional edges.")
-
-ValueError: No end state specified in any of the conditional edges.
+config = {
+    "name": "Dummy Agent",
+    "type": "agent",
+    "prompt": "What is the meaning of life?",
+    "system_prompt": "Assume that you are a philosopher heavily influenced by Socrates and believe in equilibrium between liberal and capitalist ideas.",
+    "tools": [
+        { "name": "retrieve", "method": "GET", "arn": "arn:aws:lambda:region:account-id:function:retrieve", "region": "your-region" },
+        { "name": "grade_documents", "method": "POST", "arn": "arn:aws:lambda:region:account-id:function:grade_documents", "region": "your-region" },
+        { "name": "generate", "method": "PUT", "arn": "arn:aws:lambda:region:account-id:function:generate", "region": "your-region" },
+        { "name": "transform_query", "method": "GET", "arn": "arn:aws:lambda:region:account-id:function:transform_query", "region": "your-region" },
+        { "name": "decide_to_generate", "method": "GET", "arn": "arn:aws:lambda:region:account-id:function:decide_to_generate", "region": "your-region" },
+        { "name": "grade_generation_v_documents_and_question", "method": "GET", "arn": "arn:aws:lambda:region:account-id:function:grade_generation_v_documents_and_question", "region": "your-region" },
+        { "name": "grade_documents_enhanced", "method": "POST", "arn": "arn:aws:lambda:region:account-id:function:grade_documents_enhanced", "region": "your-region" }
+    ],
+    "model": "llama3",
+    "entry_point": "retrieve",
+    "nodes": [
+        {
+            "name": "retrieve",
+            "destination": "grade_documents"
+        },
+        {
+            "name": "grade_documents",
+            "condition": {
+                "deciding_fn": "decide_to_generate",
+                "process": {
+                    "transform_query": "transform_query",
+                    "generate": "generate",
+                    "failure": "grade_documents_enhanced"
+                }
+            }
+        },
+        {
+            "name": "transform_query",
+            "destination": "retrieve"
+        },
+        {
+            "name": "generate",
+            "condition": {
+                "deciding_fn": "grade_generation_v_documents_and_question",
+                "process": {
+                    "not supported": "generate",
+                    "useful": END,
+                    "not useful": "transform_query"
+                }
+            }
+        },
+        {
+            "name": "grade_documents_enhanced",
+            "destination": "generate"
+        }
+    ]
+}
