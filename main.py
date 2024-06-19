@@ -39,7 +39,10 @@ class GraphBuilder:
         if self.config.get("entry_point") not in [node["name"] for node in self.config["nodes"]]:
             raise ValueError("Invalid entry point specified.")
 
-        if not any("END" in process for node in self.config["nodes"] for process in node.get("condition", {}).get("process", {}).values()):
+        end_state_found = any(
+            "END" in process.values() for node in self.config["nodes"] for process in node.get("condition", {}).get("process", {}).items()
+        )
+        if not end_state_found:
             raise ValueError("No end state specified in any of the conditional edges.")
 
     def _load_config(self):
@@ -69,7 +72,7 @@ class GraphBuilder:
                 self.workflow.add_conditional_edges(
                     node["name"],
                     deciding_fn,
-                    {key: value if value != "END" else END for key, value in condition["process"].items()}
+                    {key: (value if value != "END" else END) for key, value in condition["process"].items()}
                 )
 
     def compile(self):
@@ -122,7 +125,7 @@ config = {
                 "deciding_fn": "grade_generation_v_documents_and_question",
                 "process": {
                     "not supported": "generate",
-                    "useful": END,
+                    "useful": "END",
                     "not useful": "transform_query"
                 }
             }
