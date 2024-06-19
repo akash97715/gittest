@@ -1,33 +1,87 @@
-Cell In[29], line 76
-     75 def compile(self):
----> 76     app = self.workflow.compile()
-     77     try:
-     78         display(Image(app.get_graph(xray=True).draw_mermaid_png()))
+from langgraph.graph import END, StateGraph
+from IPython.display import Image, display
 
-File c:\Users\akasdeep\Downloads\langgraphmain\agentsenv\Lib\site-packages\langgraph\graph\state.py:233, in StateGraph.compile(self, checkpointer, interrupt_before, interrupt_after, debug)
-    230 interrupt_after = interrupt_after or []
-    232 # validate the graph
---> 233 self.validate(
-    234     interrupt=(
-    235         (interrupt_before if interrupt_before != "*" else []) + interrupt_after
-    236         if interrupt_after != "*"
-    237         else []
-    238     )
-    239 )
-    241 # prepare output channels
-    242 state_keys = list(self.channels)
+# Dummy functions for demonstration; replace these with actual implementations
+def retrieve():
+    pass
 
-File c:\Users\akasdeep\Downloads\langgraphmain\agentsenv\Lib\site-packages\langgraph\graph\graph.py:303, in Graph.validate(self, interrupt)
-    301     for end in branch.ends.values():
-    302         if end not in self.nodes and end != END:
---> 303             raise ValueError(
-    304                 f"At '{start}' node, '{cond}' branch found unknown target '{end}'"
-    305             )
-    306         all_targets.add(end)
-    307 else:
+def grade_documents():
+    pass
 
-ValueError: At 'generate' node, 'grade_generation_v_documents_and_question' branch found unknown target 'END'
+def generate():
+    pass
 
+def transform_query():
+    pass
+
+def decide_to_generate():
+    pass
+
+def grade_generation_v_documents_and_question():
+    pass
+
+class GraphBuilder:
+    def __init__(self, config):
+        self.config = config
+        self.workflow = StateGraph(GraphState)
+        self._validate_config()
+        self._load_config()
+
+    def _validate_config(self):
+        required_keys = ["name", "type", "prompt", "system_prompt", "tools", "model", "entry_point", "nodes"]
+        for key in required_keys:
+            if key not in self.config:
+                raise ValueError(f"Missing required config key: {key}")
+        
+        if not any(node.get('condition') for node in self.config["nodes"]):
+            raise ValueError("No conditional edges defined in the nodes.")
+        
+        if self.config.get("entry_point") not in [node["name"] for node in self.config["nodes"]]:
+            raise ValueError("Invalid entry point specified.")
+
+        if not any("END" in process for node in self.config["nodes"] for process in node.get("condition", {}).get("process", {}).values()):
+            raise ValueError("No end state specified in any of the conditional edges.")
+
+    def _load_config(self):
+        # Map node names to functions for demonstration purposes
+        node_actions = {
+            "retrieve": retrieve,
+            "grade_documents": grade_documents,
+            "generate": generate,
+            "transform_query": transform_query,
+            "decide_to_generate": decide_to_generate,
+            "grade_generation_v_documents_and_question": grade_generation_v_documents_and_question
+        }
+
+        for node in self.config["nodes"]:
+            action = node_actions.get(node["name"], None)
+            self.workflow.add_node(node["name"], action)
+
+        self.workflow.set_entry_point(self.config["entry_point"])
+
+        for node in self.config["nodes"]:
+            if "destination" in node:
+                self.workflow.add_edge(node["name"], node["destination"])
+
+            if "condition" in node:
+                condition = node["condition"]
+                deciding_fn = node_actions.get(condition["deciding_fn"], None)
+                self.workflow.add_conditional_edges(
+                    node["name"],
+                    deciding_fn,
+                    {key: value if value != "END" else END for key, value in condition["process"].items()}
+                )
+
+    def compile(self):
+        app = self.workflow.compile()
+        try:
+            display(Image(app.get_graph(xray=True).draw_mermaid_png()))
+        except Exception:
+            print(Exception)
+            pass
+        return app
+
+# Example usage
 config = {
     "name": "Dummy Agent",
     "type": "agent",
@@ -68,10 +122,13 @@ config = {
                 "deciding_fn": "grade_generation_v_documents_and_question",
                 "process": {
                     "not supported": "generate",
-                    "useful": "END",
+                    "useful": END,
                     "not useful": "transform_query"
                 }
             }
         }
     ]
 }
+
+graph_builder = GraphBuilder(config)
+app = graph_builder.compile()
