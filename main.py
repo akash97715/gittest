@@ -1,37 +1,127 @@
----------------------------------------------------------------------------
-TypeError                                 Traceback (most recent call last)
-Cell In[28], line 1
-----> 1 graph_builder = GraphBuilder(config)
-      2 app = graph_builder.compile()
+from langgraph.graph import END, StateGraph
+from IPython.display import Image, display
 
-Cell In[26], line 9
-      7 self.workflow = StateGraph(GraphState)
-      8 self._validate_config()
-----> 9 self._load_config()
+# Dummy functions for demonstration; replace these with actual implementations
+def retrieve():
+    pass
 
-Cell In[26], line 30
-     27 nodes = {node["name"]: node for node in self.config["nodes"]}
-     29 for node in self.config["nodes"]:
----> 30     self.workflow.add_node(node["name"], None)  # Replace None with actual function references
-     32 self.workflow.set_entry_point(self.config["entry_point"])
-     34 for node in self.config["nodes"]:
+def grade_documents():
+    pass
 
-File c:\Users\akasdeep\Downloads\langgraphmain\agentsenv\Lib\site-packages\langgraph\graph\state.py:168, in StateGraph.add_node(self, node, action)
-    166 if node in self.channels:
-    167     raise ValueError(f"'{node}' is already being used as a state key")
---> 168 return super().add_node(node, action)
+def generate():
+    pass
 
-File c:\Users\akasdeep\Downloads\langgraphmain\agentsenv\Lib\site-packages\langgraph\graph\graph.py:151, in Graph.add_node(self, node, action)
-    148 if node == END or node == START:
-    149     raise ValueError(f"Node `{node}` is reserved.")
---> 151 self.nodes[node] = coerce_to_runnable(action, name=node, trace=False)
+def transform_query():
+    pass
 
-File c:\Users\akasdeep\Downloads\langgraphmain\agentsenv\Lib\site-packages\langgraph\utils.py:206, in coerce_to_runnable(thing, name, trace)
-    204     return RunnableParallel(thing)
-    205 else:
---> 206     raise TypeError(
-    207         f"Expected a Runnable, callable or dict."
-    208         f"Instead got an unsupported type: {type(thing)}"
-    209     )
+def decide_to_generate():
+    pass
 
-TypeError: Expected a Runnable, callable or dict.Instead got an unsupported type: <class 'NoneType'>
+def grade_generation_v_documents_and_question():
+    pass
+
+class GraphBuilder:
+    def __init__(self, config):
+        self.config = config
+        self.workflow = StateGraph(GraphState)
+        self._validate_config()
+        self._load_config()
+
+    def _validate_config(self):
+        required_keys = ["name", "type", "prompt", "system_prompt", "tools", "model", "entry_point", "nodes"]
+        for key in required_keys:
+            if key not in self.config:
+                raise ValueError(f"Missing required config key: {key}")
+        
+        if not any(node.get('condition') for node in self.config["nodes"]):
+            raise ValueError("No conditional edges defined in the nodes.")
+        
+        if self.config.get("entry_point") not in [node["name"] for node in self.config["nodes"]]:
+            raise ValueError("Invalid entry point specified.")
+
+        if not any("END" in process for node in self.config["nodes"] for process in node.get("condition", {}).get("process", {}).values()):
+            raise ValueError("No end state specified in any of the conditional edges.")
+
+    def _load_config(self):
+        # Map node names to functions for demonstration purposes
+        node_actions = {
+            "retrieve": retrieve,
+            "grade_documents": grade_documents,
+            "generate": generate,
+            "transform_query": transform_query,
+            "decide_to_generate": decide_to_generate,
+            "grade_generation_v_documents_and_question": grade_generation_v_documents_and_question
+        }
+
+        for node in self.config["nodes"]:
+            action = node_actions.get(node["name"], None)
+            self.workflow.add_node(node["name"], action)
+
+        self.workflow.set_entry_point(self.config["entry_point"])
+
+        for node in self.config["nodes"]:
+            if "destination" in node:
+                self.workflow.add_edge(node["name"], node["destination"])
+
+            if "condition" in node:
+                condition = node["condition"]
+                deciding_fn = node_actions.get(condition["deciding_fn"], None)
+                self.workflow.add_conditional_edges(
+                    node["name"],
+                    deciding_fn,
+                    {key: value for key, value in condition["process"].items()}
+                )
+
+    def compile(self):
+        app = self.workflow.compile()
+        try:
+            display(Image(app.get_graph(xray=True).draw_mermaid_png()))
+        except Exception:
+            print(Exception)
+            pass
+        return app
+
+# Example usage
+config = {
+    "name": "Dummy Agent",
+    "type": "agent",
+    "prompt": "What is the meaning of life?",
+    "system_prompt": "Assume that you are a philosopher heavily influenced by Socrates and believe in equilibrium between liberal and capitalist ideas.",
+    "tools": [
+        { "name": "tool1", "method": "GET", "arn": "ASFGAGSDHDSHHDHH-adaHdh" },
+        { "name": "tool2", "method": "POST", "arn": "ASFGAGSDHDSHHDHH-adaHdh" },
+        { "name": "tool3", "method": "PUT", "arn": "ASFGAGSDHDSHHDHH-adaHdh" },
+        { "name": "tool4", "method": "GET", "arn": "ASFGAGSDHDSHHDHH-adaHdh" },
+        { "name": "tool5", "method": "GET", "arn": "ASFGAGSDHDSHHDHH-adaHdh" },
+        { "name": "rewrite", "method": "GET", "arn": "ASFGAGSDHDSHHDHH-adaHdh" }
+    ],
+    "model": "llama3",
+    "entry_point": "tool1",
+    "nodes": [
+        {
+            "name": "tool1",
+            "destination": "tool2"
+        },
+        {
+            "name": "tool2",
+            "destination": "tool3"
+        },
+        {
+            "name": "tool3",
+            "condition": {
+                "deciding_fn": "rewrite",
+                "process": {
+                    "tool4": "tool4",
+                    "END": "END"
+                }
+            }
+        },
+        {
+            "name": "tool4",
+            "destination": "tool1"
+        }
+    ]
+}
+
+graph_builder = GraphBuilder(config)
+app = graph_builder.compile()
