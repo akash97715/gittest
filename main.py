@@ -1,35 +1,43 @@
-import pandas as pd
+from langgraph.graph import END, StateGraph
 
-# Sample DataFrame
-data = {
-    'id': range(100),
-    'value': [f'value_{i}' for i in range(100)]
-}
-df = pd.DataFrame(data)
+workflow = StateGraph(GraphState)
 
-# Initialize a new column for responses
-df['response'] = None
+# Define the nodes
+workflow.add_node("retrieve", retrieve)  # retrieve
+workflow.add_node("grade_documents", grade_documents)  # grade documents
+workflow.add_node("generate", generate)  # generatae
+workflow.add_node("transform_query", transform_query)  # transform_query
 
-# Assuming you have a list of 15 responses to update at once
-responses_list = [
-    ['response_1', 'response_2', 'response_3', 'response_4', 'response_5',
-     'response_6', 'response_7', 'response_8', 'response_9', 'response_10',
-     'response_11', 'response_12', 'response_13', 'response_14', 'response_15']
-]
+# Build graph
+workflow.set_entry_point("retrieve")
+workflow.add_edge("retrieve", "grade_documents")
+workflow.add_conditional_edges(
+    "grade_documents",
+    decide_to_generate,
+    {
+        "transform_query": "transform_query",
+        "generate": "generate",
+    },
+)
+workflow.add_edge("transform_query", "retrieve")
+workflow.add_conditional_edges(
+    "generate",
+    grade_generation_v_documents_and_question,
+    {
+        "not supported": "generate",
+        "useful": END,
+        "not useful": "transform_query",
+    },
+)
 
-# Update the DataFrame in chunks of 15 using iloc
-batch_size = 15
+# Compile
+app = workflow.compile()
 
-for start in range(0, len(df), batch_size):
-    end = start + batch_size
-    batch_indices = df.index[start:end]
-    
-    # Make sure we only update if we have a full batch of responses
-    if len(batch_indices) == batch_size:
-        # Replace the following line with your actual list of responses for each batch
-        responses = responses_list[0]  # Example for the first batch
-        
-        # Update the DataFrame using iloc, ensuring the correct alignment
-        df.iloc[start:end, df.columns.get_loc('response')] = responses[:len(batch_indices)]
+from IPython.display import Image, display
 
-print(df)
+try:
+    display(Image(app.get_graph(xray=True).draw_mermaid_png()))
+except Exception:
+    # This requires some extra dependencies and is optional
+    print(Exception)
+    pass
