@@ -4,30 +4,39 @@ import re
 class DocxParser:
     def __init__(self, docx_path):
         self.docx_path = docx_path
-        self.toc = []
-        self.sections = {}
-        self.extract_toc_and_contents()
+        self.sections = []
+        self.section_contents = {}
+        self.extract_sections_and_contents()
 
-    def extract_toc_and_contents(self):
+    def extract_sections_and_contents(self):
         document = Document(self.docx_path)
         toc_started = False
+        current_section = None
 
         for para in document.paragraphs:
+            # Detect the start of the TOC and collect section headers
             if para.style.name.startswith('Heading 1') and not toc_started:
                 toc_started = True
             if toc_started:
                 if para.style.name.startswith('Heading'):
                     section_title = para.text.strip()
-                    self.toc.append(section_title)
-                    self.sections[section_title] = []
-                elif para.style.name == 'Normal' and self.toc:
-                    self.sections[self.toc[-1]].append(para.text.strip())
+                    self.sections.append(section_title)
+                    current_section = section_title
+                    self.section_contents[current_section] = []
+                elif para.style.name == 'Normal' and current_section:
+                    self.section_contents[current_section].append(para.text.strip())
+        
+        # Remove empty content lists
+        for section in self.sections:
+            self.section_contents[section] = [p for p in self.section_contents[section] if p]
+            if not self.section_contents[section]:
+                self.section_contents[section] = [""]
 
     def get_sections(self):
-        return self.toc
+        return self.sections
 
     def get_section_contents(self):
-        return [(section, '\n'.join(content).strip()) for section, content in self.sections.items()]
+        return [(section, '\n'.join(content).strip()) for section, content in self.section_contents.items()]
 
 # Example usage
 docx_path = 'path_to_your_docx_file.docx'
