@@ -22,18 +22,10 @@ class DocxParser:
                     toc_started = True
                     continue
             if toc_started and elem.tag.endswith('}hyperlink'):
-                for subelem in elem.iter():
-                    if subelem.tag.endswith('}t'):
-                        section_title = ''.join(subelem.itertext()).strip()
-                        if section_title and section_title not in self.sections:
-                            self.sections.append(section_title)
-                            self.section_contents[section_title] = []
-            if toc_started and elem.tag.endswith('}p'):
-                text = ''.join(elem.itertext()).strip()
-                if text in self.sections:
-                    current_section = text
-                if current_section:
-                    self.section_contents[current_section].append(text)
+                section_title = ''.join(elem.itertext()).strip()
+                if section_title and section_title not in self.sections:
+                    self.sections.append(section_title)
+                    self.section_contents[section_title] = []
 
     def extract_contents(self):
         document = Document(self.docx_path)
@@ -43,13 +35,13 @@ class DocxParser:
             text = para.text.strip()
             if text in self.sections:
                 current_section = text
+                continue  # Avoid adding the section title as content
             if current_section:
-                if text != current_section:  # Avoid adding the section title as content
-                    self.section_contents[current_section].append(para.text.strip())
+                self.section_contents[current_section].append(para.text.strip())
 
-        # Remove empty content lists and ensure each section has at least an empty string as content
+        # Ensure each section has at least an empty string as content if no content is found
         for section in self.sections:
-            self.section_contents[section] = [p for p in self.section_contents[section] if p and p != section]
+            self.section_contents[section] = [p for p in self.section_contents[section] if p]
             if not self.section_contents[section]:
                 self.section_contents[section] = [""]
 
