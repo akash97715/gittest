@@ -1,3 +1,4 @@
+import re
 from docx import Document
 
 class DocxParser:
@@ -9,7 +10,7 @@ class DocxParser:
         self.extract_contents()
 
     def extract_sections_from_toc(self):
-        # Assuming this function fills self.sections with correct titles including any PAGEREF details
+        # Assuming this function is implemented and populates self.sections
         pass
 
     def extract_contents(self):
@@ -18,13 +19,12 @@ class DocxParser:
         current_section = None
         content_collected = False
 
-        # Define a function to normalize text by removing non-alphanumeric characters and PAGEREF info
+        # Normalization function to clean section titles
         def normalize(text):
-            import re
-            # Remove PAGEREF and any non-alphanumeric characters except for spaces
+            # Remove TOC reference and any non-alphanumeric characters except for spaces
             text = re.sub(r'PAGEREF _Toc\d+ \\h \d+', '', text)
             text = re.sub(r'[^a-zA-Z0-9 ]', '', text)
-            return text.strip().lower()
+            return re.sub(r'\s+', ' ', text).strip().lower()
 
         # Normalize sections for easier matching
         normalized_sections = {normalize(s): s for s in self.sections}
@@ -35,18 +35,17 @@ class DocxParser:
 
             # Check if the normalized text matches any normalized section title
             if normalized_text in normalized_sections:
+                # Manage the collection of content under the previous section
                 if current_section is not None and not content_collected:
-                    # Assign blank if no content was found for the previous section
                     self.section_contents[current_section].append("")
                 current_section = normalized_sections[normalized_text]
                 self.section_contents[current_section] = []
-                content_collected = False  # Reset the content collected flag
-            elif current_section:
-                # Collect text under the current section
+                content_collected = False
+            elif current_section and text:  # Ensure non-empty paragraphs are collected
                 self.section_contents[current_section].append(text)
                 content_collected = True
 
-        # After the last paragraph, check if the last section has no content
+        # Handle no content collected for the last section
         if current_section is not None and not content_collected:
             self.section_contents[current_section].append("")
 
@@ -54,18 +53,13 @@ class DocxParser:
         return self.sections
 
     def get_section_contents(self):
-        # Join the collected content for each section into a single string
+        # Format collected content into a single string per section
         return {section: '\n'.join(contents).strip() if contents else "" for section, contents in self.section_contents.items()}
 
 # Example usage
-docx_path = '/path/to/your/docx/file.docx'  # Adjust the path accordingly
+docx_path = 'path_to_your_document.docx'  # Adjust this path
 parser = DocxParser(docx_path)
-
-# Get all sections
-all_sections = parser.get_sections()
-print("All Sections:", all_sections)
-
-# Get contents of all sections
-all_section_contents = parser.get_section_contents()
-for section, content in all_section_contents.items():
-    print(f"Section: {section}\nContent:\n{content}\n" + "-"*40)
+print("All Sections:", parser.get_sections())
+print("\nSection Contents:")
+for section, content in parser.get_section_contents().items():
+    print(f"Section: {section}\nContent:\n{content}\n" + "-" * 40)
