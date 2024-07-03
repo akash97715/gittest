@@ -34,10 +34,9 @@ class DocxParser:
 
         for para in document.paragraphs:
             text = para.text.strip()
-            if text in self.sections:
+            if any(section in text for section in self.sections):
                 current_section = text
-                continue  # Avoid adding the section title as content
-            if current_section:
+            if current_section and current_section in self.section_contents:
                 self.section_contents[current_section].append(para.text.strip())
 
         # Ensure each section has at least an empty string as content if no content is found
