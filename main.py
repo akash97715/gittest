@@ -51,22 +51,23 @@ class DocxParser:
             if current_section:
                 self.sections[current_section].append(paragraph.text)
 
-    def get_all_sections(self):
+    def get_sections(self):
         return list(self.sections.keys())
 
-    def get_section_content(self, section):
-        return self.sections.get(section, [])
+    def get_section_contents(self):
+        return [(section, '\n'.join(content)) for section, content in self.sections.items()]
 
 # Example usage
 docx_path = 'path_to_your_docx_file.docx'
 parser = DocxParser(docx_path)
 
 # Get all sections
-all_sections = parser.get_all_sections()
+all_sections = parser.get_sections()
 print("All Sections:", all_sections)
 
-# Get content of a specific section
-if all_sections:
-    section_content = parser.get_section_content(all_sections[0])
-    print(f"Content of Section '{all_sections[0]}':")
-    print("\n".join(section_content))
+# Get contents of all sections
+all_section_contents = parser.get_section_contents()
+for section, content in all_section_contents:
+    print(f"Section: {section}")
+    print(f"Content:\n{content}")
+    print("\n" + "-"*40 + "\n")
