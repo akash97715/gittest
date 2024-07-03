@@ -18,10 +18,9 @@ class DocxParser:
         toc_started = False
 
         for elem in tree.iter():
-            if 'fldSimple' in elem.tag or 'instrText' in elem.tag:
-                if 'TOC' in ''.join(elem.itertext()):
-                    toc_started = True
-                    continue
+            if 'instrText' in elem.tag and 'TOC' in ''.join(elem.itertext()):
+                toc_started = True
+                continue
             if toc_started and elem.tag.endswith('}hyperlink'):
                 section_title = ''.join([e for e in elem.itertext()]).strip()
                 if section_title and section_title not in self.sections:
@@ -30,17 +29,19 @@ class DocxParser:
 
     def extract_contents(self):
         document = Document(self.docx_path)
+        paragraphs = document.paragraphs
         current_section = None
 
-        for para in document.paragraphs:
+        for i, para in enumerate(paragraphs):
             text = para.text.strip()
-            if any(section in text for section in self.sections):
+            if text in self.sections:
                 current_section = text
-                if current_section in self.sections:
-                    self.section_contents[current_section] = []
-            if current_section and current_section in self.section_contents:
-                if text != current_section:  # Avoid adding the section title as content
-                    self.section_contents[current_section].append(para.text.strip())
+                continue  # Avoid adding the section title as content
+            if current_section:
+                self.section_contents[current_section].append(text)
+                # Check if the next paragraph is a section title, if so, stop collecting
+                if i + 1 < len(paragraphs) and paragraphs[i + 1].text.strip() in self.sections:
+                    current_section = None
 
         # Ensure each section has at least an empty string as content if no content is found
         for section in self.sections:
@@ -55,7 +56,7 @@ class DocxParser:
         return [(section, '\n'.join(content).strip()) for section, content in self.section_contents.items()]
 
 # Example usage
-docx_path = 'path_to_your_docx_file.docx'
+docx_path = '/mnt/data/path_to_your_docx_file.docx'  # Update this path to your actual docx file
 parser = DocxParser(docx_path)
 
 # Get all sections
