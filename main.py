@@ -23,6 +23,7 @@ class DocxParser:
         tree = etree.XML(xml_content)
         
         toc_entries = []
+        toc_section_pattern = re.compile(r'^\d+(\.\d+)*\s.*\d+$')
         found_toc = False
 
         for elem in tree.iter():
@@ -30,10 +31,11 @@ class DocxParser:
                 if 'TOC' in ''.join(elem.itertext()):
                     found_toc = True
             elif found_toc and elem.tag.endswith('}p'):
-                # Collect TOC entries
                 text = ''.join(elem.itertext()).strip()
-                if text and not re.search(r'PAGEREF|HYPERLINK', text):
-                    toc_entries.append(text)
+                if toc_section_pattern.match(text):
+                    # Remove page number from the TOC entry
+                    section_title = re.sub(r'\s\d+$', '', text)
+                    toc_entries.append(section_title)
                 # Check for the end of TOC
                 if 'HYPERLINK' in text:
                     break
@@ -49,8 +51,8 @@ class DocxParser:
         for paragraph in document.paragraphs:
             text = paragraph.text.strip()
             if section_pattern.match(text):
-                current_section = text
-                self.sections[current_section] = []
+                if text in self.sections:
+                    current_section = text
             if current_section:
                 self.sections[current_section].append(paragraph.text)
 
