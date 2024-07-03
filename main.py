@@ -7,17 +7,15 @@ class DocxParser:
         self.docx_path = docx_path
         self.sections = []
         self.section_contents = {}
-        self.extract_sections_and_contents()
+        self.extract_sections_from_toc()
+        self.extract_contents()
 
-    def extract_sections_and_contents(self):
+    def extract_sections_from_toc(self):
         with zipfile.ZipFile(self.docx_path) as docx:
             xml_content = docx.read('word/document.xml')
         tree = etree.XML(xml_content)
         
-        # Extract sections and subsections from TOC
         toc_started = False
-        current_section = None
-
         for elem in tree.iter():
             if 'fldSimple' in elem.tag or 'instrText' in elem.tag:
                 if 'TOC' in ''.join(elem.itertext()):
@@ -36,6 +34,18 @@ class DocxParser:
                     current_section = text
                 if current_section:
                     self.section_contents[current_section].append(text)
+
+    def extract_contents(self):
+        document = Document(self.docx_path)
+        current_section = None
+
+        for para in document.paragraphs:
+            text = para.text.strip()
+            if text in self.sections:
+                current_section = text
+            if current_section:
+                if text != current_section:  # Avoid adding the section title as content
+                    self.section_contents[current_section].append(para.text.strip())
 
         # Remove empty content lists and ensure each section has at least an empty string as content
         for section in self.sections:
