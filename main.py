@@ -1,50 +1,53 @@
+import zipfile
+from lxml import etree
 from docx import Document
-import re
 
 class DocxParser:
     def __init__(self, docx_path):
         self.docx_path = docx_path
-        self.toc = []
-        self.sections = {}
-        self.extract_toc()
-        self.extract_contents()
+        self.sections = []
+        self.section_contents = {}
+        self.extract_sections_and_contents()
 
-    def extract_toc(self):
-        document = Document(self.docx_path)
+    def extract_sections_and_contents(self):
+        with zipfile.ZipFile(self.docx_path) as docx:
+            xml_content = docx.read('word/document.xml')
+        tree = etree.XML(xml_content)
+        
+        # Extract sections and subsections from TOC
         toc_started = False
-
-        for para in document.paragraphs:
-            if 'Table of Contents' in para.text:
-                toc_started = True
-                continue
-            if toc_started:
-                if para.style.name.startswith('Heading'):
-                    section_title = para.text.strip()
-                    self.toc.append(section_title)
-                    self.sections[section_title] = []
-
-    def extract_contents(self):
-        document = Document(self.docx_path)
         current_section = None
 
-        for para in document.paragraphs:
-            text = para.text.strip()
-            if text in self.toc:
-                current_section = text
-            if current_section:
-                self.sections[current_section].append(para.text.strip())
+        for elem in tree.iter():
+            if 'fldSimple' in elem.tag or 'instrText' in elem.tag:
+                if 'TOC' in ''.join(elem.itertext()):
+                    toc_started = True
+                    continue
+            if toc_started and elem.tag.endswith('}hyperlink'):
+                for subelem in elem.iter():
+                    if subelem.tag.endswith('}t'):
+                        section_title = ''.join(subelem.itertext()).strip()
+                        if section_title and section_title not in self.sections:
+                            self.sections.append(section_title)
+                            self.section_contents[section_title] = []
+            if toc_started and elem.tag.endswith('}p'):
+                text = ''.join(elem.itertext()).strip()
+                if text in self.sections:
+                    current_section = text
+                if current_section:
+                    self.section_contents[current_section].append(text)
 
         # Remove empty content lists and ensure each section has at least an empty string as content
         for section in self.sections:
-            self.sections[section] = [p for p in self.sections[section] if p]
-            if not self.sections[section]:
-                self.sections[section] = [""]
+            self.section_contents[section] = [p for p in self.section_contents[section] if p and p != section]
+            if not self.section_contents[section]:
+                self.section_contents[section] = [""]
 
     def get_sections(self):
-        return self.toc
+        return self.sections
 
     def get_section_contents(self):
-        return [(section, '\n'.join(content).strip()) for section, content in self.sections.items()]
+        return [(section, '\n'.join(content).strip()) for section, content in self.section_contents.items()]
 
 # Example usage
 docx_path = 'path_to_your_docx_file.docx'
