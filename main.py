@@ -12,21 +12,31 @@ class DocxParser:
         document = Document(self.docx_path)
         toc_started = False
         current_section = None
+        section_pattern = re.compile(r'^\d+(\.\d+)*\s.*$')
 
+        # First, capture sections and subsections from the TOC
         for para in document.paragraphs:
-            # Detect the start of the TOC and collect section headers
             if para.style.name.startswith('Heading 1') and not toc_started:
                 toc_started = True
             if toc_started:
                 if para.style.name.startswith('Heading'):
                     section_title = para.text.strip()
-                    self.sections.append(section_title)
-                    current_section = section_title
-                    self.section_contents[current_section] = []
-                elif para.style.name == 'Normal' and current_section:
+                    if section_pattern.match(section_title):
+                        self.sections.append(section_title)
+                        current_section = section_title
+                        self.section_contents[current_section] = []
+
+        # Then, extract content based on captured sections
+        current_section = None
+        for para in document.paragraphs:
+            text = para.text.strip()
+            if text in self.sections:
+                current_section = text
+            if current_section:
+                if text != current_section:  # Avoid adding the section title as content
                     self.section_contents[current_section].append(para.text.strip())
-        
-        # Remove empty content lists
+
+        # Remove empty content lists and ensure each section has at least an empty string as content
         for section in self.sections:
             self.section_contents[section] = [p for p in self.section_contents[section] if p]
             if not self.section_contents[section]:
