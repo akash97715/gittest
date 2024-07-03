@@ -1,60 +1,33 @@
-import zipfile
-import re
-from lxml import etree
 from docx import Document
+import re
 
 class DocxParser:
     def __init__(self, docx_path):
         self.docx_path = docx_path
-        self.sections = []
-        self.section_contents = {}
-        self.parse_docx()
+        self.toc = []
+        self.sections = {}
+        self.extract_toc_and_contents()
 
-    def parse_docx(self):
-        self.sections = self.get_toc_sections()
-        self.extract_section_contents()
-
-    def get_toc_sections(self):
-        # Open the docx file as a zip archive
-        with zipfile.ZipFile(self.docx_path) as docx:
-            # Read the document.xml file
-            xml_content = docx.read('word/document.xml')
-        
-        # Parse the XML content
-        tree = etree.XML(xml_content)
-        
-        toc_entries = []
-        hyperlink_pattern = re.compile(r'HYPERLINK')
-
-        for elem in tree.iter():
-            if 'instrText' in elem.tag and hyperlink_pattern.search(''.join(elem.itertext())):
-                text = ''.join(elem.itertext()).strip()
-                if text:
-                    toc_entries.append(text)
-        
-        return toc_entries
-
-    def extract_section_contents(self):
+    def extract_toc_and_contents(self):
         document = Document(self.docx_path)
-        current_section = None
-        section_pattern = re.compile(r'^\d+(\.\d+)*\s.*$')
+        toc_started = False
 
-        for paragraph in document.paragraphs:
-            text = paragraph.text.strip()
-            if text in self.sections:
-                current_section = text
-                self.section_contents[current_section] = []
-            if current_section:
-                self.section_contents[current_section].append(paragraph.text)
-
-        # Convert the contents to a list of tuples
-        self.section_contents = [(section, '\n'.join(content).strip()) for section, content in self.section_contents.items()]
+        for para in document.paragraphs:
+            if para.style.name.startswith('Heading 1') and not toc_started:
+                toc_started = True
+            if toc_started:
+                if para.style.name.startswith('Heading'):
+                    section_title = para.text.strip()
+                    self.toc.append(section_title)
+                    self.sections[section_title] = []
+                elif para.style.name == 'Normal' and self.toc:
+                    self.sections[self.toc[-1]].append(para.text.strip())
 
     def get_sections(self):
-        return self.sections
+        return self.toc
 
     def get_section_contents(self):
-        return self.section_contents
+        return [(section, '\n'.join(content).strip()) for section, content in self.sections.items()]
 
 # Example usage
 docx_path = 'path_to_your_docx_file.docx'
