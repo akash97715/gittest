@@ -16,12 +16,12 @@ class DocxParser:
         tree = etree.XML(xml_content)
         
         toc_started = False
-        current_section = None
 
         for elem in tree.iter():
-            if 'instrText' in elem.tag and 'TOC' in ''.join(elem.itertext()):
-                toc_started = True
-                continue
+            if 'fldSimple' in elem.tag or 'instrText' in elem.tag:
+                if 'TOC' in ''.join(elem.itertext()):
+                    toc_started = True
+                    continue
             if toc_started and elem.tag.endswith('}hyperlink'):
                 section_title = ''.join([e for e in elem.itertext()]).strip()
                 if section_title and section_title not in self.sections:
@@ -36,8 +36,11 @@ class DocxParser:
             text = para.text.strip()
             if any(section in text for section in self.sections):
                 current_section = text
+                if current_section in self.sections:
+                    self.section_contents[current_section] = []
             if current_section and current_section in self.section_contents:
-                self.section_contents[current_section].append(para.text.strip())
+                if text != current_section:  # Avoid adding the section title as content
+                    self.section_contents[current_section].append(para.text.strip())
 
         # Ensure each section has at least an empty string as content if no content is found
         for section in self.sections:
