@@ -6,7 +6,8 @@ from docx import Document
 class DocxParser:
     def __init__(self, docx_path):
         self.docx_path = docx_path
-        self.sections = {}
+        self.sections = []
+        self.section_contents = {}
         self.page_map = {}
         self.parse_docx()
 
@@ -29,17 +30,16 @@ class DocxParser:
         found_toc = False
 
         for elem in tree.iter():
-            if 'instrText' in elem.tag:
-                if 'TOC' in ''.join(elem.itertext()):
-                    found_toc = True
+            if 'instrText' in elem.tag and 'TOC' in ''.join(elem.itertext()):
+                found_toc = True
             elif found_toc and elem.tag.endswith('}p'):
                 text = ''.join(elem.itertext()).strip()
                 if toc_section_pattern.match(text):
                     # Extract section title and page number
-                    section_title = re.sub(r'\s\d+$', '', text)
-                    page_number = re.findall(r'\d+$', text)[0]
-                    toc_entries.append((section_title, int(page_number)))
-                # Check for the end of TOC
+                    match = re.match(r'^(.*\d+(\.\d+)*)\s(.*)\s(\d+)$', text)
+                    section_title = match.group(3)
+                    page_number = int(match.group(4))
+                    toc_entries.append((section_title, page_number))
                 if 'HYPERLINK' in text:
                     break
         
@@ -61,32 +61,33 @@ class DocxParser:
                 current_page += 1
             if elem.tag.endswith('}p'):
                 text = ''.join(elem.itertext()).strip()
-                if text:
-                    if text not in page_map:
-                        page_map[text] = current_page
+                if text and text not in page_map:
+                    page_map[text] = current_page
         
         return page_map
 
     def extract_section_contents(self):
         document = Document(self.docx_path)
-        section_content = {}
         for section, start_page in self.sections:
-            section_content[section] = []
+            self.section_contents[section] = []
+            collecting = False
             for paragraph in document.paragraphs:
                 text = paragraph.text.strip()
-                if text in self.page_map and self.page_map[text] >= start_page:
-                    section_content[section].append(paragraph.text)
-                    if self.sections.index((section, start_page)) + 1 < len(self.sections):
-                        end_page = self.sections[self.sections.index((section, start_page)) + 1][1]
-                        if self.page_map[text] >= end_page:
-                            break
-        self.sections = section_content
+                if text in self.page_map:
+                    current_page = self.page_map[text]
+                    if current_page == start_page:
+                        collecting = True
+                    elif current_page > start_page:
+                        collecting = False
+                        break
+                if collecting:
+                    self.section_contents[section].append(paragraph.text)
 
     def get_sections(self):
-        return list(self.sections.keys())
+        return [section for section, _ in self.sections]
 
     def get_section_contents(self):
-        return [(section, '\n'.join(content).strip()) for section, content in self.sections.items()]
+        return [(section, '\n'.join(content).strip()) for section, content in self.section_contents.items()]
 
 # Example usage
 docx_path = 'path_to_your_docx_file.docx'
