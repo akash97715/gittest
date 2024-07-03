@@ -1,63 +1,36 @@
-import zipfile
-from lxml import etree
-from docx import Document
-
-def get_toc_entries(docx_path):
-    # Open the docx file as a zip archive
-    with zipfile.ZipFile(docx_path) as docx:
-        # Read the document.xml file
-        xml_content = docx.read('word/document.xml')
-    
-    # Parse the XML content
-    tree = etree.XML(xml_content)
-    
-    toc_entries = []
-    found_toc = False
-
-    for elem in tree.iter():
-        if 'fldSimple' in elem.tag or 'instrText' in elem.tag:
-            if 'TOC' in ''.join(elem.itertext()):
-                found_toc = True
-        elif found_toc and elem.tag.endswith('}p'):
-            # Collect TOC entries
-            text = ''.join(elem.itertext()).strip()
-            if text:
-                toc_entries.append(text)
-            # Check for the end of TOC
-            if 'HYPERLINK' in text:
-                break
-
-    return toc_entries
-
-def extract_sections_from_docx(docx_path):
-    document = Document(docx_path)
-    toc_entries = get_toc_entries(docx_path)
-    sections = []
-
-    # Extract section titles from TOC entries
-    for entry in toc_entries:
-        sections.append(entry)
-
-    # Extract content based on sections
-    section_texts = {section: [] for section in sections}
-    current_section = None
-
-    for paragraph in document.paragraphs:
-        if paragraph.text.strip() in sections:
-            current_section = paragraph.text.strip()
-        if current_section:
-            section_texts[current_section].append(paragraph.text)
-
-    # Convert section texts to a list of lists
-    section_content_list = [section_texts[section] for section in sections]
-
-    return section_content_list
-
-# Example usage
-docx_path = 'path_to_your_docx_file.docx'
-section_contents = extract_sections_from_docx(docx_path)
-
-for index, section in enumerate(section_contents):
-    print(f"Section {index + 1} Content:")
-    print("\n".join(section))
-    print("\n" + "-"*40 + "\n")
+def _gather_table_metadata(self, table, table_img_path, page_num):
+        column_headers = [
+            cell.text for cell in table.table_cells if cell.is_column_header
+        ]
+        footers = [footer.text for footer in table.footers]
+ 
+        return {
+            "document_path": self.custom_extraction_document_path,
+            "table_id": table.id,
+            "figure_name": os.path.basename(table_img_path),
+            "table_bbox": table.bbox,
+            "table_column_count": table.column_count,
+            "table_title": getattr(table.title, "text", None),
+            "column_headers": column_headers,
+            "footers": footers,
+            "table_height": table.height,
+            "table_metadata": table.metadata,
+            "figure_page": page_num,
+            "table_page_id": table.page_id,
+            "table_confidence": table.raw_object["Confidence"],
+            "table_row_count": table.row_count,
+            "table_img_path": table_img_path,
+            "table_html": table.to_html(),
+            "table_markdown": table.to_markdown(),
+            "table_width": table.width,
+            "table_x": table.x,
+            "table_y": table.y,
+            "table_embedding_text": table.get_text(
+                TextLinearizationConfig(
+                    table_linearization_format="markdown",
+                    table_flatten_headers=True,
+                    table_duplicate_text_in_merged_cells=True,
+                    table_column_header_threshold=0.5,
+                )
+            ),
+        }
