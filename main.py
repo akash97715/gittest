@@ -1,25 +1,55 @@
-import openpyxl
+from docx import Document
+from lxml import etree
+import zipfile
 
-def save_to_excel(data, filename):
-    # Create a new workbook and select the active worksheet
-    workbook = openpyxl.Workbook()
-    sheet = workbook.active
+def get_toc_paragraphs(docx_path):
+    with zipfile.ZipFile(docx_path) as docx:
+        xml_content = docx.read('word/document.xml')
+    tree = etree.XML(xml_content)
 
-    # Write data to the worksheet
-    for row_index, row in enumerate(data, start=1):
-        for col_index, cell_value in enumerate(row, start=1):
-            sheet.cell(row=row_index, column=col_index, value=cell_value)
+    toc_paragraphs = []
+    for elem in tree.iter():
+        if 'fldSimple' in elem.tag or 'instrText' in elem.tag:
+            if 'TOC' in etree.tostring(elem, encoding='unicode'):
+                while elem is not None:
+                    if elem.tag.endswith('}p'):
+                        toc_paragraphs.append(elem)
+                    elem = elem.getnext()
+                break
 
-    # Save the workbook to a file
-    workbook.save(filename)
+    return toc_paragraphs
+
+def extract_sections_from_docx(docx_path):
+    document = Document(docx_path)
+    toc_paragraphs = get_toc_paragraphs(docx_path)
+    sections = []
+
+    # Extract section titles from TOC paragraphs
+    for para in toc_paragraphs:
+        text = ''.join(para.itertext()).strip()
+        if text:
+            sections.append(text)
+
+    # Extract content based on sections
+    section_texts = {section: [] for section in sections}
+    current_section = None
+
+    for paragraph in document.paragraphs:
+        if paragraph.text.strip() in sections:
+            current_section = paragraph.text.strip()
+        if current_section:
+            section_texts[current_section].append(paragraph.text)
+
+    # Convert section texts to a list of lists
+    section_content_list = [section_texts[section] for section in sections]
+
+    return section_content_list
 
 # Example usage
-data = [
-    ["Header1", "Header2", "Header3"],
-    ["Row1-Cell1", "Row1-Cell2", "Row1-Cell3"],
-    ["Row2-Cell1", "Row2-Cell2", "Row2-Cell3"],
-    # Add more rows as needed
-]
+docx_path = 'path_to_your_docx_file.docx'
+section_contents = extract_sections_from_docx(docx_path)
 
-filename = 'output.xlsx'
-save_to_excel(data, filename)
+for index, section in enumerate(section_contents):
+    print(f"Section {index + 1} Content:")
+    print("\n".join(section))
+    print("\n" + "-"*40 + "\n")
