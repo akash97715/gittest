@@ -10,6 +10,7 @@ class DocxParser:
 
     def extract_sections_from_toc(self):
         # Your existing TOC extraction logic...
+        # Assuming it fills self.sections with accurate section names
         pass
 
     def extract_contents(self):
@@ -18,15 +19,22 @@ class DocxParser:
         current_section = None
         content_collected = False
 
+        # Define a function to normalize section titles for better matching
+        def normalize(text):
+            return ''.join(filter(str.isalnum, text)).lower()
+
+        normalized_sections = {normalize(s): s for s in self.sections}
+
         for para in paragraphs:
             text = para.text.strip()
-            # Check if the text is exactly a section title
-            if text in self.sections:
+            normalized_text = normalize(text)
+
+            # Check if the normalized text matches any normalized section title
+            if normalized_text in normalized_sections:
                 if current_section is not None and not content_collected:
-                    # If no content was found for the previous section, assign blank
+                    # Assign blank if no content was found for the previous section
                     self.section_contents[current_section].append("")
-                # Update current section
-                current_section = text
+                current_section = normalized_sections[normalized_text]
                 self.section_contents[current_section] = []
                 content_collected = False  # Reset the content collected flag
             elif current_section:
@@ -43,10 +51,10 @@ class DocxParser:
 
     def get_section_contents(self):
         # Join the collected content for each section into a single string
-        return {section: '\n'.join(contents).strip() for section, contents in self.section_contents.items()}
+        return {section: '\n'.join(contents).strip() if contents else "" for section, contents in self.section_contents.items()}
 
 # Example usage
-docx_path = '/path/to/your/docx/file.docx'
+docx_path = '/path/to/your/docx/file.docx'  # Adjust the path accordingly
 parser = DocxParser(docx_path)
 
 # Get all sections
