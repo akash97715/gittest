@@ -27,7 +27,7 @@ class DocxParser:
         found_toc = False
 
         for elem in tree.iter():
-            if 'fldSimple' in elem.tag or 'instrText' in elem.tag:
+            if 'instrText' in elem.tag:
                 if 'TOC' in ''.join(elem.itertext()):
                     found_toc = True
             elif found_toc and elem.tag.endswith('}p'):
@@ -50,9 +50,8 @@ class DocxParser:
 
         for paragraph in document.paragraphs:
             text = paragraph.text.strip()
-            if section_pattern.match(text):
-                if text in self.sections:
-                    current_section = text
+            if text in self.sections:
+                current_section = text
             if current_section:
                 self.sections[current_section].append(paragraph.text)
 
