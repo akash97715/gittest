@@ -1,4 +1,5 @@
 import zipfile
+import re
 from lxml import etree
 from docx import Document
 
@@ -31,7 +32,7 @@ class DocxParser:
             elif found_toc and elem.tag.endswith('}p'):
                 # Collect TOC entries
                 text = ''.join(elem.itertext()).strip()
-                if text and 'PAGEREF' not in text:
+                if text and not re.search(r'PAGEREF|HYPERLINK', text):
                     toc_entries.append(text)
                 # Check for the end of TOC
                 if 'HYPERLINK' in text:
@@ -43,11 +44,13 @@ class DocxParser:
     def extract_section_contents(self):
         document = Document(self.docx_path)
         current_section = None
+        section_pattern = re.compile(r'^\d+(\.\d+)*\s.*$')
 
         for paragraph in document.paragraphs:
             text = paragraph.text.strip()
-            if text in self.sections:
+            if section_pattern.match(text):
                 current_section = text
+                self.sections[current_section] = []
             if current_section:
                 self.sections[current_section].append(paragraph.text)
 
