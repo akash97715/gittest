@@ -22,6 +22,8 @@ def ingest(data: IngestModel):
     # Extract values from textract_config with defaults
     config = DEFAULT_TEXTRACT_CONFIG.copy()
     config.update(data.textract_config or {})
+    
+    # Extract individual values
     ingest_table_content_details = config.get('ingest_table_content_details')
     table_column_separator = config.get('table_column_separator')
     table_row_separator = config.get('table_row_separator')
@@ -30,6 +32,9 @@ def ingest(data: IngestModel):
     textractLinearizationConfig(ingest_table_content_details, table_column_separator, table_row_separator)
 
 # Example input data
-example_data = {}  # Simulate missing user input
+example_data = {
+    # Uncomment the below line to simulate user input
+    # 'textract_config': {'ingest_table_content_details': 'markdown'}
+}
 ingest_model_instance = IngestModel(**example_data)
 ingest(ingest_model_instance)
