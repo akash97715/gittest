@@ -119,4 +119,89 @@ class LambdaWrapper(BaseModel):
         }
     ]
 }
+
+
+
+from langgraph.graph import StateGraph, END
+from typing import Sequence, TypedDict, Annotated
+# from langchain_community.chat_models import ChatOllama, ChatOpenAI
+from pydantic import Field
+from collections import deque
+import json
+from api.lambda_tools_wrapper import LambdaWrapper
+from api.agent_state import AgentState
+ 
+def runnable_action(tool_name):
+    return tool_name
+ 
+ 
+class Workflow:
+    def __init__(self, config):
+        self.config = config
+        self.workflow = StateGraph(AgentState)
+        self.lambda_wrappers : dict[LambdaWrapper] = {}
+        self._validate_config()
+        self._create_lambda_wrappers()
+        self._load_config()
+ 
+    def _validate_config(self):
+        required_keys = ["name", "description", "prompt", "system_prompt", "tools", "model", "entry_point", "nodes"]
+        for key in required_keys:
+            if key not in self.config:
+                raise ValueError(f"Missing required config key: {key}")
+       
+        # if not any(node.get('condition') for node in self.config["nodes"]):
+        #     raise ValueError("No conditional edges defined in the nodes.")
+       
+        if self.config.get("entry_point") not in [node["name"] for node in self.config["nodes"]]:
+            raise ValueError("Invalid entry point specified.")
+ 
+        end_state_found = any(
+            value == "END" for node in self.config["nodes"]
+            for value in (node.get("condition").get("destination").values() if node.get("condition") is not None
+            else [node.get("destination")])
+        )
+        if not end_state_found:
+            raise ValueError("No end state specified in any of the conditional edges.")
+ 
+    def _create_lambda_wrappers(self):
+        for tool in self.config["tools"]:
+            wrapper = LambdaWrapper.create(
+                function_name=tool["arn"],
+                tool_name=tool["name"],
+                tool_description=f"Lambda function for {tool['name']}",
+                region=tool["region"]
+            )
+            self.lambda_wrappers[tool["name"]] = wrapper
+ 
+    def _load_config(self):
+        for node in self.config["nodes"]:
+            action = self.lambda_wrappers.get(node["name"])
+            self.workflow.add_node(node["name"], action.run)
+ 
+        self.workflow.set_entry_point(self.config["entry_point"])
+ 
+        for node in self.config["nodes"]:
+            if "condition" in node:
+                condition = node["condition"]
+                deciding_fn: LambdaWrapper = self.lambda_wrappers.get(condition["deciding_fn"])
+                self.workflow.add_conditional_edges(
+                    node["name"],
+                    deciding_fn.run,
+                    {key: (value if value != "END" else END) for key, value in condition["destination"].items()}
+                )
+                deciding_fn.set_is_conditional(True)
+            elif "destination" in node:
+                self.workflow.add_edge(node["name"], node["destination"] if node["destination"] != "END" else END)
+            else:
+                raise ValueError("No destination found for the node!")
+ 
+    def compile(self):
+        app = self.workflow.compile()
+        try:
+            print("Workflow compiled")
+            # graph.get_graph(xray=True).draw_png("./app/example/graph.png")
+        except Exception:
+            print(Exception)
+        return app
  
