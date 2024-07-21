@@ -1,5 +1,77 @@
-July 21, 2024 > 18:23:40 | INFO | utils.ias_openai_langchain:ias_openai_chat_completion_with_tools:371 | Calling chat completion endpoint with tools July 21, 2024 > 18:23:40 | INFO | utils.ias_openai_langchain:ias_openai_chat_completion_with_tools:372 | {'engine': 'gpt-4', 'messages': [{'role': 'system', 'content': 'You are a helpful assistant'}, {'role': 'user', 'content': 'Hello! How can I assist you today?'}, {'role': 'assistant', 'content': 'Hi'}, {'role': 'user', 'content': 'what is the weather in india'}], 'temperature': 0.7, 'max_tokens': 3000, 'tools': []} July 21, 2024 > 18:23:45 | INFO | utils.ias_openai_langchain:ias_openai_chat_completion_with_tools:375 | Received response from llm July 21, 2024 > 18:23:45 | INFO | utils.ias_openai_langchain:ias_openai_chat_completion_with_tools:377 | {'status': 'success', 'result': '{"content": "I\'m sorry, as an AI, I don\'t have real-time data capabilities to provide the current weather. However, you can easily check the weather in India on a weather forecasting site or app like The Weather Channel, BBC Weather, or your phone\'s built-in weather app.", "role": "assistant"}', 'totalTokens': 96} July 21, 2024 > 18:23:45 | DEBUG | utils.ias_openai_langchain:_generate:1142 | Total tokens consumed: 96
-Output exceeds the size limit. Open the full output data in a text editor
----------------------------------------------------------------------------AttributeError                            Traceback (most recent call last) Cell In[9], line 2      1 inputs = {"input": "what is the weather in india", "chat_history": []}----> 2 app.invoke(inputs) File d:\docinsight_langgraph\docinsightlanggraph\Lib\site-packages\langgraph\pregel\__init__.py:1668, in Pregel.invoke(self, input, config, stream_mode, output_keys, input_keys, interrupt_before, interrupt_after, debug, **kwargs)   1666 else:   1667     chunks = []-> 1668 for chunk in self.stream(   1669     input,   1670     config,   1671     stream_mode=stream_mode,   1672     output_keys=output_keys,   1673     input_keys=input_keys,   1674     interrupt_before=interrupt_before,   1675     interrupt_after=interrupt_after,   1676     debug=debug,   1677     **kwargs,   1678 ):   1679     if stream_mode == "values":   1680         latest = chunk File d:\docinsight_langgraph\docinsightlanggraph\Lib\site-packages\langgraph\pregel\__init__.py:1111, in Pregel.stream(self, input, config, stream_mode, output_keys, input_keys, interrupt_before, interrupt_after, debug) 1108 del fut, task
-...
--> 1476     role = _dict.get("role")   1477     id_ = _dict.get("id")   1478     if role == "user":AttributeError: 'str' object has no attribute 'get'
+[12:12 AM] Deep, Akash (External)
+        response, total_token_completion = ias_openai_chat_completion_with_tools(
+            self.engine,
+            self.temperature,
+            self.max_tokens - token_consumed,
+            self.client_id,
+            self.x_vsl_client_id,
+            self.bearer_token,
+            messages_dict,
+            kwargs.get("tools",[]),
+            "auto",
+        )
+        logger.debug(f"Total tokens consumed: {total_token_completion}")
+ 
+        self.total_consumed_token.append(total_token_completion)
+ 
+        return self._create_chat_result(response)
+ 
+    def _create_chat_result(
+        self, response: Union[dict, openai.BaseModel, str]
+    ) -> ChatResult:
+        generations = []
+ 
+        gen = ChatGeneration(
+            message=convert_dict_to_message(response),
+            generation_info=dict(finish_reason="stop"),
+        )
+        generations.append(gen)
+        llm_output = {
+            "token_usage": 0,
+            "model_name": self.engine,
+        }
+        return ChatResult(generations=generations, llm_output=llm_output)
+ 
+[12:18 AM] Deep, Akash (External)
+def convert_dict_to_message(_dict: Mapping[str, Any]) -> BaseMessage:
+    """Convert a dictionary to a LangChain message.
+ 
+    Args:
+        _dict: The dictionary.
+ 
+    Returns:
+        The LangChain message.
+    """
+    role = _dict.get("role")
+    id_ = _dict.get("id")
+    if role == "user":
+        return HumanMessage(content=_dict.get("content", ""), id=id_)
+    elif role == "assistant":
+        # Fix for azure
+        # Also OpenAI returns None for tool invocations
+        content = _dict.get("content", "") or ""
+        additional_kwargs: Dict = {}
+        if function_call := _dict.get("function_call"):
+            additional_kwargs["function_call"] = dict(function_call)
+        if tool_calls := _dict.get("tool_calls"):
+            additional_kwargs["tool_calls"] = tool_calls
+        return AIMessage(content=content, additional_kwargs=additional_kwargs, id=id_)
+    elif role == "system":
+        return SystemMessage(content=_dict.get("content", ""), id=id_)
+    elif role == "function":
+        return FunctionMessage(
+            content=_dict.get("content", ""), name=_dict.get("name"), id=id_
+        )
+    elif role == "tool":
+        additional_kwargs = {}
+        if "name" in _dict:
+            additional_kwargs["name"] = _dict["name"]
+        return ToolMessage(
+            content=_dict.get("content", ""),
+            tool_call_id=_dict.get("tool_call_id"),
+            additional_kwargs=additional_kwargs,
+            id=id_,
+        )
+    else:
+        return ChatMessage(content=_dict.get("content", ""), role=role, id=id_)
+ 
