@@ -1,20 +1,3 @@
-[11:40 PM] Deep, Akash (External)
-July 21, 2024 > 18:09:14 | INFO | utils.ias_openai_langchain:ias_openai_chat_completion_with_tools:368 | Calling chat completion endpoint with tools July 21, 2024 > 18:09:14 | INFO | utils.ias_openai_langchain:ias_openai_chat_completion_with_tools:369 | {'engine': 'gpt-4', 'messages': [{'role': 'system', 'content': 'You are a helpful assistant'}, {'role': 'user', 'content': 'Hello! How can I assist you today?'}, {'role': 'assistant', 'content': 'Hi'}, {'role': 'user', 'content': 'what is the weather in india'}], 'temperature': 0.7, 'max_tokens': 3000, 'tools': {}, 'tool_choice': 'auto'} July 21, 2024 > 18:09:15 | INFO | utils.ias_openai_langchain:ias_openai_chat_completion_with_tools:373 | Received response from llm July 21, 2024 > 18:09:15 | INFO | utils.ias_openai_langchain:ias_openai_chat_completion_with_tools:374 | {'detail': [{'type': 'list_type', 'loc': ['body', 'tools'], 'msg': 'Input should be a valid list', 'input': {}}]} July 21, 2024 > 18:09:15 | ERROR | utils.ias_openai_langchain:ias_openai_chat_completion_with_tools:377 | Error calling OpenAI chat completion API: 422, {'detail': [{'type': 'list_type', 'loc': ['body', 'tools'], 'msg': 'Input should be a valid list', 'input': {}}]} July 21, 2024 > 18:09:15 | ERROR | utils.ias_openai_langchain:ias_openai_chat_completion_with_tools:389 | Got the Exception
- 
-[11:45 PM] Deep, Akash (External)
-class ChatRequest(BaseModel):
-    engine: str
-    messages: List[ChatMessage]
-    temperature: float = Field(0, ge=0, le=1)
-    max_tokens: int
-    n: Optional[int] = Field(default=1, ge=1)
-    stream: Optional[bool] = False
-    stop: Optional[Union[str, list[str]]] = None
-    logit_bias: Optional[Dict[str, int]] = None
-    frequency_penalty: Optional[float] = Field(default=0, ge=-2.0, le=2.0)
-    presence_penalty: Optional[float] = Field(default=0, ge=-2.0, le=2.0)
-    tools: Optional[List[ChatCompletionToolParam]] = None
-    tool_choice: Optional[str] = None
-    enhancements: Optional[Enhancements] = None
-    dataSources: Optional[List[DataSource]] = None
- 
+---------------------------------------------------------------------------GenericException                          Traceback (most recent call last) File d:\docinsightsync\vessel-services\agenttemp\utils\ias_openai_langchain.py:380, in ias_openai_chat_completion_with_tools(engine, temperature, max_tokens, client_id, x_vsl_client_id, bearer_token, messages, tools, tool_choice)    377     logger.error(    378         f"Error calling OpenAI chat completion API: {response.status_code}, {response.json()}"    379     )--> 380     raise GenericException(    381         f"Error calling OpenAI chat completion API: {response.status_code}, {response.json()}",    382         status_code=response.status_code,    383     )    384 chat_completion = json.loads(response.json()["result"])GenericException: Error calling OpenAI chat completion API: 400, {'detail': 'Error chatCompletion: {\n  "error": {\n    "message": "Invalid value for \'tool_choice\': \'tool_choice\' is only allowed when \'tools\' are specified.",\n    "type": "invalid_request_error",\n    "param": "tool_choice",\n    "code": null\n  }\n}\n'} During handling of the above exception, another exception occurred:GenericException                          Traceback (most recent call last) Cell In[9], line 2      1 inputs = {"input": "what is the weather in india", "chat_history": []}----> 2 app.invoke(inputs) File d:\docinsight_langgraph\docinsightlanggraph\Lib\site-packages\langgraph\pregel\__init__.py:1668, in Pregel.invoke(self, input, config, stream_mode, output_keys, input_keys, interrupt_before, interrupt_after, debug, **kwargs) 1666 else: 1667 chunks = []-> 1668 for chunk in self.stream(
+...
+    389 logger.error("Got the Exception", str(e))    390 # raising backoff exception--> 391 raise GenericException(e) GenericException: Error calling OpenAI chat completion API: 400, {'detail': 'Error chatCompletion: {\n  "error": {\n    "message": "Invalid value for \'tool_choice\': \'tool_choice\' is only allowed when \'tools\' are specified.",\n    "type": "invalid_request_error",\n    "param": "tool_choice",\n    "code": null\n  }\n}\n'}
