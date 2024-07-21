@@ -438,3 +438,8 @@ class IAS_ChatModel(BaseChatModel, BaseModel):
             return RunnableMap(raw=llm) | parser_with_fallback
         else:
             return llm | output_parser
+
+
+---------------------------------------------------------------------------KeyError                                  Traceback (most recent call last) Cell In[21], line 2      1 inputs = {"input": "what is the weather in india", "chat_history": []}----> 2 app.invoke(inputs) File d:\docinsight_langgraph\docinsightlanggraph\Lib\site-packages\langgraph\pregel\__init__.py:1668, in Pregel.invoke(self, input, config, stream_mode, output_keys, input_keys, interrupt_before, interrupt_after, debug, **kwargs)   1666 else:   1667     chunks = []-> 1668 for chunk in self.stream(   1669     input,   1670     config,   1671     stream_mode=stream_mode,   1672     output_keys=output_keys,   1673     input_keys=input_keys,   1674     interrupt_before=interrupt_before,   1675     interrupt_after=interrupt_after,   1676     debug=debug,   1677     **kwargs,   1678 ):   1679     if stream_mode == "values":   1680         latest = chunk File d:\docinsight_langgraph\docinsightlanggraph\Lib\site-packages\langgraph\pregel\__init__.py:1111, in Pregel.stream(self, input, config, stream_mode, output_keys, input_keys, interrupt_before, interrupt_after, debug) 1108 del fut, task
+...
+   1141 )   1142 logger.debug(f"Total tokens consumed: {total_token_completion}")   1144 self.total_consumed_token.append(total_token_completion)KeyError: 'tools\
