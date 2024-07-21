@@ -1,5 +1,16 @@
-d:\docinsight_langgraph\docinsightlanggraph\Lib\site-packages\langchain_core\_api\deprecation.py:139: LangChainDeprecationWarning: The function `initialize_agent` was deprecated in LangChain 0.1.0 and will be removed in 0.3.0. Use Use new agent constructor methods like create_react_agent, create_json_agent, create_structured_chat_agent, etc. instead.  warn_deprecated(
-Output exceeds the size limit. Open the full output data in a text editor
----------------------------------------------------------------------------AttributeError                            Traceback (most recent call last) Cell In[24], line 8      2 from langchain_openai import OpenAI      4 llm = OpenAI(temperature=0)----> 8 agent = initialize_agent(      9     tools, llm, agent=AgentType.ZERO_SHOT_REACT_DESCRIPTION, verbose=True     10 )     12 agent.run("Send an email to test@testing123.com saying hello world.") File d:\docinsight_langgraph\docinsightlanggraph\Lib\site-packages\langchain_core\_api\deprecation.py:168, in deprecated.<locals>.deprecate.<locals>.warning_emitting_wrapper(*args, **kwargs)    166     warned = True    167     emit_warning()--> 168 return wrapped(*args, **kwargs) File d:\docinsight_langgraph\docinsightlanggraph\Lib\site-packages\langchain\agents\initialize.py:75, in initialize_agent(tools, llm, agent, callback_manager, agent_path, agent_kwargs, tags, **kwargs)     73     agent_cls = AGENT_TO_CLASS[agent]     74     agent_kwargs = agent_kwargs or {}---> 75     agent_obj = agent_cls.from_llm_and_tools(     76         llm, tools, callback_manager=callback_manager, **agent_kwargs     77     )     78 elif agent_path is not None: 79 agent_obj = load_agent( 80 agent_path, llm=llm, tools=tools, callback_manager=callback_manager 81 )
-...
-     18         raise ValueError(     19             f"{class_name} does not support multi-input tool {tool.name}."     20         )AttributeError: 'list' object has no attribute 'is_single_input'
+from langchain.agents import create_react_agent
+from langchain_openai import OpenAI
+
+# Assuming 'loaded_tools' contains the tools you loaded earlier
+llm = OpenAI(temperature=0)
+
+# Create an agent using the new method
+agent = create_react_agent(
+    llm=llm,
+    tools=loaded_tools,
+    verbose=True
+)
+
+# Use the agent
+response = agent.run("Send an email to test@testing123.com saying hello world.")
+print(response)
