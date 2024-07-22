@@ -1,5 +1,28 @@
-Entering new AgentExecutor chain... I need to use aws_lambda_execution tool to execute a function that can answer this question.Action: aws_lambda_executionAction Input: 'what is LangChain?'
-Output exceeds the size limit. Open the full output data in a text editor
----------------------------------------------------------------------------ValidationError                           Traceback (most recent call last) Cell In[85], line 4      2 agent_executor = AgentExecutor(agent=agent, tools=tools, verbose=True)      3 # Ensure the tool expects data in the correct format when called----> 4 agent_executor.invoke({"input": input_data.dict()})  # Here, ensure the structure passed is correct File d:\docinsight_langgraph\docinsightlanggraph\Lib\site-packages\langchain\chains\base.py:166, in Chain.invoke(self, input, config, **kwargs)    164 except BaseException as e:    165     run_manager.on_chain_error(e)--> 166     raise e    167 run_manager.on_chain_end(outputs)    169 if include_run_info: File d:\docinsight_langgraph\docinsightlanggraph\Lib\site-packages\langchain\chains\base.py:156, in Chain.invoke(self, input, config, **kwargs)    153 try:    154     self._validate_inputs(inputs)    155     outputs = (--> 156         self._call(inputs, run_manager=run_manager)    157         if new_arg_supported    158         else self._call(inputs)    159     )    161     final_outputs: Dict[str, Any] = self.prep_outputs( 162 inputs, outputs, return_only_outputs 163 )
-...
-File d:\docinsight_langgraph\docinsightlanggraph\Lib\site-packages\pydantic\main.py:341, in pydantic.main.BaseModel.__init__()ValidationError: 1 validation error for LambdaToolInput data   value is not a valid dict (type=type_error.dict)
+# Assuming you have defined your tool and the input schema as follows:
+
+class LambdaToolInput(BaseModel):
+    """Input schema for the Lambda tool."""
+    data: Dict[str, Any] = Field(default_factory=dict, description="Payload to send to the Lambda function.")
+
+# Example usage of LambdaTool
+tool1 = LambdaTool.create(
+    function_name="arn:aws:lambda::function:sbx-vox-agent-tool-example",
+    region="us-east-1",
+    tool_name="awslambda",
+    tool_description="Sends an email with specified content"
+)
+
+# This tool is added to the list of tools managed by the AgentExecutor
+tools = [tool1]
+agent = SomeAgentImplementation()  # Ensure you have an agent defined
+agent_executor = AgentExecutor(agent=agent, tools=tools, verbose=True)
+
+# Correct formatting of the input to match what LambdaToolInput expects:
+input_dict = {"input": json.dumps({"data": {"question": "what is LangChain?"}})}
+
+# Now, invoke the executor with the correctly formatted input
+try:
+    response = agent_executor.invoke(input_dict)
+    print(response)
+except Exception as e:
+    print(f"Error during invocation: {str(e)}")
