@@ -1,3 +1,28 @@
----------------------------------------------------------------------------TypeError                                 Traceback (most recent call last) Cell In[17], line 3      1 # Create an agent executor by passing in the agent and tools      2 agent_executor = AgentExecutor(agent=agent, tools=tools, verbose=True)----> 3 agent_executor.invoke({"input": "what is LangChain?"}) File d:\docinsight_langgraph\docinsightlanggraph\Lib\site-packages\langchain\chains\base.py:166, in Chain.invoke(self, input, config, **kwargs)    164 except BaseException as e:    165     run_manager.on_chain_error(e)--> 166     raise e    167 run_manager.on_chain_end(outputs)    169 if include_run_info: File d:\docinsight_langgraph\docinsightlanggraph\Lib\site-packages\langchain\chains\base.py:156, in Chain.invoke(self, input, config, **kwargs)    153 try:    154     self._validate_inputs(inputs)    155     outputs = (--> 156         self._call(inputs, run_manager=run_manager)    157         if new_arg_supported    158         else self._call(inputs)    159     )    161     final_outputs: Dict[str, Any] = self.prep_outputs( 162 inputs, outputs, return_only_outputs 163 )
-...
----> 58 updated_payload = state["payload"]     59 if updated_payload is not None:     60     updated_payload.update(response) TypeError: string indices must be integers, not 'str
+class LambdaWrapper(BaseModel):
+    """Wrapper for AWS Lambda SDK."""
+    lambda_client: Any  #: :meta private:
+    function_name: str
+    awslambda_tool_name: Optional[str] = None
+    awslambda_tool_description: Optional[str] = None
+    is_conditional_fn: bool = False
+    
+    @classmethod
+    def create(cls, function_name: str, region: str):
+        lambda_client = boto3.client("lambda", region_name=region)
+        return cls(lambda_client=lambda_client, function_name=function_name)
+
+    def run(self, state: Dict[str, Any]) -> Dict[str, Any]:
+        """Runs the specified AWS Lambda function with the given state as input."""
+        response = self.lambda_client.invoke(
+            FunctionName=self.function_name,
+            InvocationType="RequestResponse",
+            Payload=json.dumps(state)  # Ensure 'state' is a dictionary
+        )
+        payload_stream = response['Payload']
+        payload_string = payload_stream.read().decode("utf-8")
+        response_data = json.loads(payload_string)
+        
+        if 'body' in response_data:
+            return response_data['body']  # Return the 'body' part of the response if available
+
+        return response_data  # Return the whole response otherwise
