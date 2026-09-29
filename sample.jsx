@@ -62,8 +62,6 @@ const TA_GROUP_TO_FRANS = {
 
 const REGION_OPTIONS = [
   { label: 'All regions', value: null },
-  { label: 'All regions', value: null },
-  { label: 'All regions', value: null },
   { label: 'West',        value: 'West' },
   { label: 'Central',     value: 'Central' },
   { label: 'Northeast',   value: 'Northeast' },
@@ -1420,19 +1418,11 @@ export default function DashboardPage({ onOpenFcr, onDigestNavigate }) {
         {showMoreFilters && (
           <div className="more-filters-panel" style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', alignItems: 'start', gap: '14px 28px', paddingTop: 8, borderTop: '1px solid #F3F4F6' }}>
             {/* Therapy */}
-<<<<<<< HEAD
             <div style={{ display: 'flex', alignItems: 'flex-start', gap: 10, flexWrap: 'wrap' }}>
               <div style={{ fontSize: 10, fontWeight: 700, color: '#9CA3AF', textTransform: 'uppercase', letterSpacing: '0.05em', minWidth: 78, paddingTop: 6 }}>Therapy</div>
               <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6, flex: 1 }}>
-                <FilterDropdown id="ta2" label="Therapeutic Area" icon={Briefcase} options={TA_OPTIONS} value={filterTA} onChange={value => { trackFilterChange('therapeutic-area', value); setFilterTA(value); }} open={openDropdown === 'ta2'} onToggle={setOpenDropdown} disabled={isFieldHeadView} />
-                <FilterDropdown id="diseaseArea" label="Disease Area" icon={Leaf} options={diseaseAreaOptions} value={filterDiseaseArea} onChange={value => { trackFilterChange('disease-area', value); setFilterDiseaseArea(value); }} open={openDropdown === 'diseaseArea'} onToggle={setOpenDropdown} disabled={isFieldHeadView} />
-=======
-            <div>
-              <div style={{ fontSize: 10, fontWeight: 700, color: '#9CA3AF', textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: 6 }}>Therapy</div>
-              <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
-                <FilterDropdown id="ta2" label="Therapeutic Area" options={TA_OPTIONS} value={filterTA} onChange={value => { trackFilterChange('therapeutic-area', value); setFilterTA(value); }} open={openDropdown === 'ta2'} onToggle={setOpenDropdown} disabled={isFieldHeadView || isFieldDirectorView} />
-                <FilterDropdown id="diseaseArea" label="Disease Area" options={diseaseAreaOptions} value={filterDiseaseArea} onChange={value => { trackFilterChange('disease-area', value); setFilterDiseaseArea(value); }} open={openDropdown === 'diseaseArea'} onToggle={setOpenDropdown} disabled={isFieldHeadView || isFieldDirectorView} />
->>>>>>> 070fd6b (WIP: Ask AI hierarchical RBAC (scope-locked SQL + Deep Analysis) + multi-disease Field Head fixes, before merging origin/qa)
+                <FilterDropdown id="ta2" label="Therapeutic Area" icon={Briefcase} options={TA_OPTIONS} value={filterTA} onChange={value => { trackFilterChange('therapeutic-area', value); setFilterTA(value); }} open={openDropdown === 'ta2'} onToggle={setOpenDropdown} disabled={isFieldHeadView || isFieldDirectorView} />
+                <FilterDropdown id="diseaseArea" label="Disease Area" icon={Leaf} options={diseaseAreaOptions} value={filterDiseaseArea} onChange={value => { trackFilterChange('disease-area', value); setFilterDiseaseArea(value); }} open={openDropdown === 'diseaseArea'} onToggle={setOpenDropdown} disabled={isFieldHeadView || isFieldDirectorView} />
               </div>
             </div>
 
@@ -1442,21 +1432,12 @@ export default function DashboardPage({ onOpenFcr, onDigestNavigate }) {
               <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6, flex: 1 }}>
                 <FilterDropdown id="fieldHead" label="Field Head" icon={Building2} options={fieldHeadOptions} value={effectiveFieldHeadWwid}
                   onChange={v => { trackFilterChange('field-head', v ? 'selected' : 'all'); setFilterFieldHead(v); setFilterFieldDirector(null); setFilterMsl(null); }}
-<<<<<<< HEAD
-                  open={openDropdown === 'fieldHead'} onToggle={setOpenDropdown} disabled={isFieldHeadView} />
+                  open={openDropdown === 'fieldHead'} onToggle={setOpenDropdown} disabled={isFieldHeadView || isFieldDirectorView} />
                 <FilterDropdown id="fieldDirector" label="Field Director" icon={User} options={fieldDirectorOptions} value={filterFieldDirector}
                   onChange={v => { trackFilterChange('field-director', v ? 'selected' : 'all'); setFilterFieldDirector(v); setFilterMsl(null); }}
-                  open={openDropdown === 'fieldDirector'} onToggle={setOpenDropdown} />
-                <FilterDropdown id="msl" label="MSL" icon={Users} options={mslOptions} value={filterMsl} onChange={value => { trackFilterChange('msl', value ? 'selected' : 'all'); setFilterMsl(value); }} open={openDropdown === 'msl'} onToggle={setOpenDropdown} />
-                <FilterDropdown id="jobRole" label="Job Role" icon={Briefcase} options={jobRoleOptions} value={filterJobRole} onChange={value => { trackFilterChange('job-role', value); setFilterJobRole(value); }} open={openDropdown === 'jobRole'} onToggle={setOpenDropdown} />
-=======
-                  open={openDropdown === 'fieldHead'} onToggle={setOpenDropdown} disabled={isFieldHeadView || isFieldDirectorView} />
-                <FilterDropdown id="fieldDirector" label="Field Director" options={fieldDirectorOptions} value={filterFieldDirector}
-                  onChange={v => { trackFilterChange('field-director', v ? 'selected' : 'all'); setFilterFieldDirector(v); setFilterMsl(null); }}
                   open={openDropdown === 'fieldDirector'} onToggle={setOpenDropdown} disabled={isFieldDirectorView} />
-                <FilterDropdown id="msl" label="MSL" options={mslOptions} value={filterMsl} onChange={value => { trackFilterChange('msl', value ? 'selected' : 'all'); setFilterMsl(value); }} open={openDropdown === 'msl'} onToggle={setOpenDropdown} />
-                <FilterDropdown id="jobRole" label="Job Role" options={jobRoleOptions} value={filterJobRole} onChange={value => { trackFilterChange('job-role', value); setFilterJobRole(value); }} open={openDropdown === 'jobRole'} onToggle={setOpenDropdown} disabled={isFieldDirectorView} />
->>>>>>> 070fd6b (WIP: Ask AI hierarchical RBAC (scope-locked SQL + Deep Analysis) + multi-disease Field Head fixes, before merging origin/qa)
+                <FilterDropdown id="msl" label="MSL" icon={Users} options={mslOptions} value={filterMsl} onChange={value => { trackFilterChange('msl', value ? 'selected' : 'all'); setFilterMsl(value); }} open={openDropdown === 'msl'} onToggle={setOpenDropdown} />
+                <FilterDropdown id="jobRole" label="Job Role" icon={Briefcase} options={jobRoleOptions} value={filterJobRole} onChange={value => { trackFilterChange('job-role', value); setFilterJobRole(value); }} open={openDropdown === 'jobRole'} onToggle={setOpenDropdown} disabled={isFieldDirectorView} />
                 {/* Bug 1 fix: always show the selected MSL's name + REAL FCR count
                     (0, 1, or more) — never falls back to TA/Disease Area. */}
                 {filterMsl && (
@@ -1490,19 +1471,11 @@ export default function DashboardPage({ onOpenFcr, onDigestNavigate }) {
             </div>
 
             {/* Geography */}
-<<<<<<< HEAD
             <div style={{ display: 'flex', alignItems: 'flex-start', gap: 10, flexWrap: 'wrap' }}>
               <div style={{ fontSize: 10, fontWeight: 700, color: '#9CA3AF', textTransform: 'uppercase', letterSpacing: '0.05em', minWidth: 78, paddingTop: 6 }}>Geography</div>
               <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6, flex: 1 }}>
-                <FilterDropdown id="region2" label="Region" icon={MapPin} options={regionOptions} value={filterRegion} onChange={value => { trackFilterChange('region', value); setFilterRegion(value); }} open={openDropdown === 'region2'} onToggle={setOpenDropdown} />
-                <FilterDropdown id="territory" label="Territory" icon={MapIcon} options={territoryOptions} value={filterTerritory} onChange={value => { trackFilterChange('territory', value ? 'selected' : 'all'); setFilterTerritory(value); }} open={openDropdown === 'territory'} onToggle={setOpenDropdown} />
-=======
-            <div>
-              <div style={{ fontSize: 10, fontWeight: 700, color: '#9CA3AF', textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: 6 }}>Geography</div>
-              <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
-                <FilterDropdown id="region2" label="Region" options={regionOptions} value={filterRegion} onChange={value => { trackFilterChange('region', value); setFilterRegion(value); }} open={openDropdown === 'region2'} onToggle={setOpenDropdown} disabled={isFieldDirectorView} />
-                <FilterDropdown id="territory" label="Territory" options={territoryOptions} value={filterTerritory} onChange={value => { trackFilterChange('territory', value ? 'selected' : 'all'); setFilterTerritory(value); }} open={openDropdown === 'territory'} onToggle={setOpenDropdown} disabled={isFieldDirectorView} />
->>>>>>> 070fd6b (WIP: Ask AI hierarchical RBAC (scope-locked SQL + Deep Analysis) + multi-disease Field Head fixes, before merging origin/qa)
+                <FilterDropdown id="region2" label="Region" icon={MapPin} options={regionOptions} value={filterRegion} onChange={value => { trackFilterChange('region', value); setFilterRegion(value); }} open={openDropdown === 'region2'} onToggle={setOpenDropdown} disabled={isFieldDirectorView} />
+                <FilterDropdown id="territory" label="Territory" icon={MapIcon} options={territoryOptions} value={filterTerritory} onChange={value => { trackFilterChange('territory', value ? 'selected' : 'all'); setFilterTerritory(value); }} open={openDropdown === 'territory'} onToggle={setOpenDropdown} disabled={isFieldDirectorView} />
                 {/* Bug 2 fix: always show the selected Region's REAL FCR count
                     and a clickable list of the FCRs published there — never
                     falls back to TA/Disease Area data. */}
