@@ -1,0 +1,511 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>FCR AI · Telemetry</title>
+<style>
+  :root{
+    color-scheme: light;
+    --bg:#FBF7F6;
+    --surface:#FFFFFF;
+    --ink:#1A1618;
+    --muted:#7A7072;
+    --faint:#A49A9C;
+    --accent:#C8102E;
+    --accent-soft:#FBEBED;
+    --line:#EEE4E3;
+    --ok:#2E7D5B;
+    --ok-soft:#E8F3ED;
+    --warn:#B5731F;
+    --s1:#C8102E;
+    --s2:#E0734A;
+    --s3:#E8A33D;
+    --s4:#9C6B7A;
+    --s5:#C9B3A8;
+    --radius:14px;
+  }
+  @media (prefers-color-scheme: dark){
+    :root:not([data-theme="light"]){
+      color-scheme: dark;
+      --bg:#171415; --surface:#1F1B1C; --ink:#F2EDEC; --muted:#A49A9C;
+      --faint:#776E70; --accent:#F0526B; --accent-soft:#36191E; --line:#2E2829;
+      --ok:#5FBF93; --ok-soft:#1B2A24;
+    }
+  }
+  *{box-sizing:border-box}
+  html{-webkit-text-size-adjust:100%}
+  body{
+    margin:0; background:var(--bg); color:var(--ink);
+    font-family:"Segoe UI",system-ui,-apple-system,"Helvetica Neue",Arial,sans-serif;
+    font-size:15px; line-height:1.5;
+    padding-top:env(safe-area-inset-top,0px);
+    padding-bottom:env(safe-area-inset-bottom,0px);
+  }
+  .wrap{max-width:1240px;margin:0 auto;padding:28px 24px 72px}
+
+  /* header */
+  .masthead{display:flex;align-items:flex-end;justify-content:space-between;gap:24px;flex-wrap:wrap;margin-bottom:26px}
+  .brand{display:flex;flex-direction:column;gap:3px}
+  .brand .org{font-size:13px;color:var(--muted);letter-spacing:.01em}
+  .brand h1{margin:0;font-size:30px;font-weight:650;letter-spacing:-.022em}
+  .live{display:inline-flex;align-items:center;gap:7px;font-size:12.5px;color:var(--ok);
+    background:var(--ok-soft);padding:4px 11px;border-radius:999px;margin-left:10px;vertical-align:4px;font-weight:500}
+  .live i{width:6px;height:6px;border-radius:50%;background:var(--ok);display:block}
+  .controls{display:flex;gap:8px;flex-wrap:wrap}
+  .pill{border:1px solid var(--line);background:var(--surface);color:var(--muted);
+    padding:7px 14px;border-radius:999px;font-size:13.5px;cursor:pointer;font-family:inherit}
+  .pill[aria-pressed="true"]{background:var(--accent);border-color:var(--accent);color:#fff}
+  .pill:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+
+  /* kpis */
+  .kpis{display:grid;grid-template-columns:repeat(4,1fr);gap:14px;margin-bottom:14px}
+  .kpi{background:var(--surface);border:1px solid var(--line);border-radius:var(--radius);padding:18px 20px}
+  .kpi .label{font-size:13px;color:var(--muted);margin-bottom:9px}
+  .kpi .value{font-size:36px;font-weight:620;letter-spacing:-.03em;line-height:1}
+  .kpi .sub{font-size:12.5px;color:var(--faint);margin-top:7px}
+  .kpi .delta{font-size:12.5px;font-weight:500;color:var(--ok)}
+  .kpi .delta.down{color:var(--accent)}
+
+  /* grid */
+  .grid{display:grid;gap:14px;margin-bottom:14px}
+  .g-2{grid-template-columns:1.55fr 1fr}
+  .g-2b{grid-template-columns:1fr 1fr}
+  .card{background:var(--surface);border:1px solid var(--line);border-radius:var(--radius);padding:20px 22px}
+  .card h2{margin:0;font-size:16px;font-weight:600;letter-spacing:-.01em}
+  .card .note{font-size:12.5px;color:var(--faint);margin-top:3px}
+  .card-head{display:flex;align-items:baseline;justify-content:space-between;gap:12px;margin-bottom:18px}
+  .legend{display:flex;gap:14px;flex-wrap:wrap;font-size:12.5px;color:var(--muted);margin-top:14px}
+  .legend span{display:inline-flex;align-items:center;gap:6px}
+  .swatch{width:10px;height:10px;border-radius:3px;display:block}
+
+  svg{display:block;width:100%;height:auto}
+  .axis{font-size:11px;fill:var(--faint)}
+  .gridline{stroke:var(--line);stroke-width:1}
+
+  /* ranked bars */
+  .rank{display:flex;flex-direction:column;gap:13px}
+  .row-label{display:flex;justify-content:space-between;align-items:baseline;gap:10px;font-size:13.5px;margin-bottom:5px}
+  .row-label .n{color:var(--muted);font-variant-numeric:tabular-nums;font-size:12.5px;white-space:nowrap}
+  .track{height:7px;background:var(--line);border-radius:4px;overflow:hidden}
+  .fill{height:100%;border-radius:4px}
+  .mono{font-family:"Cascadia Mono",Consolas,ui-monospace,monospace;font-size:12.5px}
+
+  /* funnel */
+  .funnel{display:flex;flex-direction:column;gap:2px}
+  .step{display:flex;align-items:center;gap:14px;padding:11px 0;border-bottom:1px solid var(--line)}
+  .step:last-child{border-bottom:0}
+  .step .bar{height:30px;border-radius:5px;flex:0 0 auto;min-width:4px}
+  .step .txt{display:flex;flex-direction:column;gap:1px;min-width:0}
+  .step .txt b{font-weight:550;font-size:13.5px}
+  .step .txt small{color:var(--faint);font-size:12px}
+  .step .pct{margin-left:auto;font-size:13px;color:var(--muted);font-variant-numeric:tabular-nums;white-space:nowrap}
+
+  /* table */
+  table{width:100%;border-collapse:collapse;font-size:13.5px}
+  th{text-align:left;font-weight:550;color:var(--muted);font-size:12.5px;padding:0 10px 10px 0;border-bottom:1px solid var(--line)}
+  td{padding:11px 10px 11px 0;border-bottom:1px solid var(--line);vertical-align:top}
+  tr:last-child td{border-bottom:0}
+  .tag{display:inline-block;padding:2.5px 9px;border-radius:999px;font-size:11.5px;background:var(--accent-soft);color:var(--accent);font-weight:500}
+  .tag.n{background:var(--line);color:var(--muted)}
+  .who{display:flex;flex-direction:column;gap:1px}
+  .who b{font-weight:550}
+  .who small{color:var(--faint);font-size:12px}
+  .num{font-variant-numeric:tabular-nums;color:var(--muted);white-space:nowrap}
+
+  /* health strip */
+  .health{display:grid;grid-template-columns:repeat(4,1fr);gap:0;border:1px solid var(--line);
+    border-radius:var(--radius);overflow:hidden;background:var(--surface)}
+  .health div{padding:15px 20px;border-right:1px solid var(--line)}
+  .health div:last-child{border-right:0}
+  .health .k{font-size:12.5px;color:var(--muted);margin-bottom:5px}
+  .health .v{font-size:19px;font-weight:600;letter-spacing:-.02em}
+  .health .v.ok{color:var(--ok)}
+
+  footer{margin-top:28px;font-size:12.5px;color:var(--faint);display:flex;justify-content:space-between;gap:16px;flex-wrap:wrap}
+
+  @media (max-width:1000px){
+    .kpis{grid-template-columns:repeat(2,1fr)}
+    .g-2,.g-2b{grid-template-columns:1fr}
+    .health{grid-template-columns:repeat(2,1fr)}
+    .health div:nth-child(2){border-right:0}
+    .health div:nth-child(1),.health div:nth-child(2){border-bottom:1px solid var(--line)}
+  }
+  @media (max-width:560px){
+    .wrap{padding:20px 16px 56px}
+    .kpis{grid-template-columns:1fr}
+    .brand h1{font-size:25px}
+    .scrollx{overflow-x:auto}
+  }
+  @media (prefers-reduced-motion:reduce){*{transition:none!important;animation:none!important}}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <header class="masthead">
+    <div class="brand">
+      <div class="org">Johnson &amp; Johnson · FCR AI Insights</div>
+      <h1>Telemetry<span class="live"><i></i>Live</span></h1>
+    </div>
+    <div class="controls" role="group" aria-label="Time range">
+      <button class="pill" aria-pressed="false">24 hours</button>
+      <button class="pill" aria-pressed="true">7 days</button>
+      <button class="pill" aria-pressed="false">30 days</button>
+      <button class="pill" aria-pressed="false">All time</button>
+    </div>
+  </header>
+
+  <!-- KPIs -->
+  <section class="kpis" aria-label="Headline metrics">
+    <div class="kpi">
+      <div class="label">Active users</div>
+      <div class="value">38</div>
+      <div class="sub"><span class="delta">+6</span> vs previous 7 days</div>
+    </div>
+    <div class="kpi">
+      <div class="label">Sessions</div>
+      <div class="value">110</div>
+      <div class="sub">2.9 per user</div>
+    </div>
+    <div class="kpi">
+      <div class="label">Events captured</div>
+      <div class="value">26,442</div>
+      <div class="sub">240 per session</div>
+    </div>
+    <div class="kpi">
+      <div class="label">Median time on page</div>
+      <div class="value">4<span style="font-size:20px;font-weight:500">m</span> 12<span style="font-size:20px;font-weight:500">s</span></div>
+      <div class="sub"><span class="delta down">−38s</span> vs previous 7 days</div>
+    </div>
+  </section>
+
+  <!-- Activity + event mix -->
+  <section class="grid g-2">
+    <div class="card">
+      <div class="card-head">
+        <div>
+          <h2>Daily activity</h2>
+          <div class="note">Sessions per day with distinct users overlaid</div>
+        </div>
+      </div>
+      <svg viewBox="0 0 640 230" role="img" aria-label="Bar chart of daily sessions with a line showing distinct users, 7 October to 13 October">
+        <!-- gridlines -->
+        <line class="gridline" x1="34" y1="20"  x2="640" y2="20"/>
+        <line class="gridline" x1="34" y1="67"  x2="640" y2="67"/>
+        <line class="gridline" x1="34" y1="114" x2="640" y2="114"/>
+        <line class="gridline" x1="34" y1="161" x2="640" y2="161"/>
+        <line class="gridline" x1="34" y1="188" x2="640" y2="188" stroke="var(--faint)"/>
+        <text class="axis" x="0" y="24">32</text>
+        <text class="axis" x="0" y="71">24</text>
+        <text class="axis" x="0" y="118">16</text>
+        <text class="axis" x="0" y="165">8</text>
+        <text class="axis" x="0" y="192">0</text>
+
+        <!-- bars: 11,14,9,21,18,26,11 sessions of 32 -->
+        <rect x="52"  y="123" width="54" height="65"  rx="4" fill="var(--accent)" opacity=".16"/>
+        <rect x="136" y="106" width="54" height="82"  rx="4" fill="var(--accent)" opacity=".16"/>
+        <rect x="220" y="135" width="54" height="53"  rx="4" fill="var(--accent)" opacity=".16"/>
+        <rect x="304" y="65"  width="54" height="123" rx="4" fill="var(--accent)" opacity=".16"/>
+        <rect x="388" y="82"  width="54" height="106" rx="4" fill="var(--accent)" opacity=".16"/>
+        <rect x="472" y="35"  width="54" height="153" rx="4" fill="var(--accent)" opacity=".28"/>
+        <rect x="556" y="123" width="54" height="65"  rx="4" fill="var(--accent)" opacity=".16"/>
+
+        <!-- users line: 7,9,6,13,11,16,8 of 32 -->
+        <polyline fill="none" stroke="var(--s2)" stroke-width="2" stroke-linejoin="round" stroke-linecap="round"
+          points="79,147 163,135 247,153 331,112 415,124 499,94 583,141"/>
+        <g fill="var(--surface)" stroke="var(--s2)" stroke-width="2">
+          <circle cx="79"  cy="147" r="3.5"/><circle cx="163" cy="135" r="3.5"/>
+          <circle cx="247" cy="153" r="3.5"/><circle cx="331" cy="112" r="3.5"/>
+          <circle cx="415" cy="124" r="3.5"/><circle cx="499" cy="94"  r="3.5"/>
+          <circle cx="583" cy="141" r="3.5"/>
+        </g>
+
+        <text class="axis" x="79"  y="207" text-anchor="middle">Tue 7</text>
+        <text class="axis" x="163" y="207" text-anchor="middle">Wed 8</text>
+        <text class="axis" x="247" y="207" text-anchor="middle">Thu 9</text>
+        <text class="axis" x="331" y="207" text-anchor="middle">Fri 10</text>
+        <text class="axis" x="415" y="207" text-anchor="middle">Sat 11</text>
+        <text class="axis" x="499" y="207" text-anchor="middle">Sun 12</text>
+        <text class="axis" x="583" y="207" text-anchor="middle">Mon 13</text>
+      </svg>
+      <div class="legend">
+        <span><i class="swatch" style="background:var(--accent);opacity:.25"></i>Sessions</span>
+        <span><i class="swatch" style="background:var(--s2)"></i>Distinct users</span>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-head">
+        <div>
+          <h2>Event mix</h2>
+          <div class="note">Share of all captured events</div>
+        </div>
+      </div>
+      <div class="rank">
+        <div>
+          <div class="row-label"><span class="mono">custom</span><span class="n">12,108 · 46%</span></div>
+          <div class="track"><div class="fill" style="width:46%;background:var(--s1)"></div></div>
+        </div>
+        <div>
+          <div class="row-label"><span class="mono">button_click</span><span class="n">7,402 · 28%</span></div>
+          <div class="track"><div class="fill" style="width:28%;background:var(--s2)"></div></div>
+        </div>
+        <div>
+          <div class="row-label"><span class="mono">page_view</span><span class="n">3,699 · 14%</span></div>
+          <div class="track"><div class="fill" style="width:14%;background:var(--s3)"></div></div>
+        </div>
+        <div>
+          <div class="row-label"><span class="mono">page_exit</span><span class="n">2,115 · 8%</span></div>
+          <div class="track"><div class="fill" style="width:8%;background:var(--s4)"></div></div>
+        </div>
+        <div>
+          <div class="row-label"><span class="mono">user_login</span><span class="n">793 · 3%</span></div>
+          <div class="track"><div class="fill" style="width:3%;background:var(--s5)"></div></div>
+        </div>
+        <div>
+          <div class="row-label"><span class="mono">error</span><span class="n">325 · 1%</span></div>
+          <div class="track"><div class="fill" style="width:1.2%;background:var(--warn)"></div></div>
+        </div>
+      </div>
+      <p class="note" style="margin-top:18px;line-height:1.45">
+        Nearly half of all traffic arrives as <span class="mono">custom</span>, so the
+        <span class="mono">eventName</span> field inside the payload carries most of the detail.
+      </p>
+    </div>
+  </section>
+
+  <!-- Named interactions + drilldown -->
+  <section class="grid g-2b">
+    <div class="card">
+      <div class="card-head">
+        <div>
+          <h2>Most used interactions</h2>
+          <div class="note">By <span class="mono">eventName</span>, across all pages</div>
+        </div>
+      </div>
+      <div class="rank">
+        <div>
+          <div class="row-label"><span>Chart drill-down</span><span class="n">4,860 · 31 users</span></div>
+          <div class="track"><div class="fill" style="width:100%;background:var(--s1)"></div></div>
+        </div>
+        <div>
+          <div class="row-label"><span>Summary view switch</span><span class="n">2,104 · 29 users</span></div>
+          <div class="track"><div class="fill" style="width:43%;background:var(--s1);opacity:.85"></div></div>
+        </div>
+        <div>
+          <div class="row-label"><span>Chart “All” pill</span><span class="n">1,377 · 24 users</span></div>
+          <div class="track"><div class="fill" style="width:28%;background:var(--s1);opacity:.7"></div></div>
+        </div>
+        <div>
+          <div class="row-label"><span>AI Digest opened</span><span class="n">918 · 22 users</span></div>
+          <div class="track"><div class="fill" style="width:19%;background:var(--s1);opacity:.6"></div></div>
+        </div>
+        <div>
+          <div class="row-label"><span>Filters cleared</span><span class="n">641 · 19 users</span></div>
+          <div class="track"><div class="fill" style="width:13%;background:var(--s1);opacity:.5"></div></div>
+        </div>
+        <div>
+          <div class="row-label"><span>Consent accepted</span><span class="n">38 · 38 users</span></div>
+          <div class="track"><div class="fill" style="width:2%;background:var(--s1);opacity:.4"></div></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-head">
+        <div>
+          <h2>How deep people drill</h2>
+          <div class="note">FCR coverage chart · levels reached</div>
+        </div>
+      </div>
+      <div class="funnel">
+        <div class="step">
+          <span class="bar" style="width:152px;background:var(--s1)"></span>
+          <span class="txt"><b>Therapeutic area</b><small>Entry level</small></span>
+          <span class="pct">2,186</span>
+        </div>
+        <div class="step">
+          <span class="bar" style="width:118px;background:var(--s1);opacity:.8"></span>
+          <span class="txt"><b>Disease area</b><small>78% continue</small></span>
+          <span class="pct">1,704</span>
+        </div>
+        <div class="step">
+          <span class="bar" style="width:62px;background:var(--s1);opacity:.6"></span>
+          <span class="txt"><b>Regional head</b><small>52% continue</small></span>
+          <span class="pct">886</span>
+        </div>
+        <div class="step">
+          <span class="bar" style="width:29px;background:var(--s1);opacity:.42"></span>
+          <span class="txt"><b>Field director</b><small>23% continue</small></span>
+          <span class="pct">204</span>
+        </div>
+      </div>
+      <p class="note" style="margin-top:16px;line-height:1.45">
+        Most people stop at disease area. Field director is reached in roughly one in ten
+        drill-downs, which may mean the level is hard to find or rarely useful.
+      </p>
+    </div>
+  </section>
+
+  <!-- AI Digest engagement -->
+  <section class="grid g-2">
+    <div class="card">
+      <div class="card-head">
+        <div>
+          <h2>AI Digest engagement</h2>
+          <div class="note">Scroll depth after opening, with feedback requests</div>
+        </div>
+      </div>
+      <svg viewBox="0 0 640 170" role="img" aria-label="Funnel showing AI Digest opened 918 times, 50 percent scroll 702, 75 percent scroll 511, 100 percent scroll 347, feedback given 96">
+        <g>
+          <rect x="0"   y="24" width="118" height="74" rx="6" fill="var(--s1)"/>
+          <rect x="130" y="31" width="118" height="60" rx="6" fill="var(--s1)" opacity=".82"/>
+          <rect x="260" y="37" width="118" height="48" rx="6" fill="var(--s1)" opacity=".64"/>
+          <rect x="390" y="44" width="118" height="34" rx="6" fill="var(--s1)" opacity=".46"/>
+          <rect x="520" y="52" width="118" height="18" rx="6" fill="var(--s2)"/>
+        </g>
+        <g class="axis" text-anchor="middle" style="font-size:12px;fill:var(--ink)">
+          <text x="59"  y="120" font-weight="600">918</text>
+          <text x="189" y="120" font-weight="600">702</text>
+          <text x="319" y="120" font-weight="600">511</text>
+          <text x="449" y="120" font-weight="600">347</text>
+          <text x="579" y="120" font-weight="600">96</text>
+        </g>
+        <g class="axis" text-anchor="middle">
+          <text x="59"  y="139">Opened</text>
+          <text x="189" y="139">50% scrolled</text>
+          <text x="319" y="139">75% scrolled</text>
+          <text x="449" y="139">Read fully</text>
+          <text x="579" y="139">Gave feedback</text>
+        </g>
+        <g class="axis" text-anchor="middle" style="fill:var(--faint)">
+          <text x="59"  y="155">—</text>
+          <text x="189" y="155">76%</text>
+          <text x="319" y="155">56%</text>
+          <text x="449" y="155">38%</text>
+          <text x="579" y="155">10%</text>
+        </g>
+      </svg>
+      <p class="note" style="margin-top:14px;line-height:1.45">
+        38% of people who open the digest read it to the end. Of those, roughly a quarter
+        go on to leave written feedback.
+      </p>
+    </div>
+
+    <div class="card">
+      <div class="card-head">
+        <div>
+          <h2>Pages</h2>
+          <div class="note">Views and median time, last 7 days</div>
+        </div>
+      </div>
+      <div class="scrollx">
+      <table>
+        <thead>
+          <tr><th>Page</th><th class="num">Views</th><th class="num">Users</th><th class="num">Median time</th></tr>
+        </thead>
+        <tbody>
+          <tr><td><span class="mono">/summary</span></td><td class="num">1,402</td><td class="num">38</td><td class="num">7m 53s</td></tr>
+          <tr><td><span class="mono">/fcrs</span></td><td class="num">906</td><td class="num">34</td><td class="num">4m 06s</td></tr>
+          <tr><td><span class="mono">/capability</span></td><td class="num">641</td><td class="num">27</td><td class="num">3m 22s</td></tr>
+          <tr><td><span class="mono">/ask-ai</span></td><td class="num">418</td><td class="num">21</td><td class="num">5m 41s</td></tr>
+          <tr><td><span class="mono">/reference</span></td><td class="num">224</td><td class="num">12</td><td class="num">1m 48s</td></tr>
+          <tr><td><span class="mono">/consent</span></td><td class="num">108</td><td class="num">38</td><td class="num">0m 14s</td></tr>
+        </tbody>
+      </table>
+      </div>
+    </div>
+  </section>
+
+  <!-- Recent sessions -->
+  <section class="card" style="margin-bottom:14px">
+    <div class="card-head">
+      <div>
+        <h2>Recent sessions</h2>
+        <div class="note">Most recent first · click a row to open the full event trail</div>
+      </div>
+    </div>
+    <div class="scrollx">
+    <table>
+      <thead>
+        <tr>
+          <th>User</th><th>Role</th><th class="num">Started</th><th class="num">Duration</th>
+          <th class="num">Events</th><th>Last action</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td><div class="who"><b>S. Hariharan</b><small>1791925320…</small></div></td>
+          <td><span class="tag">Field Coach</span></td>
+          <td class="num">13 Oct, 21:02</td><td class="num">11m 09s</td><td class="num">47</td>
+          <td><span class="mono">ai_digest_written_feedback_requested</span></td>
+        </tr>
+        <tr>
+          <td><div class="who"><b>M. Grandhe</b><small>1791918844…</small></div></td>
+          <td><span class="tag">Regional Head</span></td>
+          <td class="num">13 Oct, 19:18</td><td class="num">3m 02s</td><td class="num">12</td>
+          <td><span class="mono">chart_drilldown</span></td>
+        </tr>
+        <tr>
+          <td><div class="who"><b>V. Nagarajan</b><small>1791904511…</small></div></td>
+          <td><span class="tag">Field Coach</span></td>
+          <td class="num">13 Oct, 15:31</td><td class="num">28m 44s</td><td class="num">163</td>
+          <td><span class="mono">summary_filters_clear_all</span></td>
+        </tr>
+        <tr>
+          <td><div class="who"><b>Anonymous</b><small>1791899027…</small></div></td>
+          <td><span class="tag n">Pre-consent</span></td>
+          <td class="num">13 Oct, 14:03</td><td class="num">0m 09s</td><td class="num">2</td>
+          <td><span class="mono">consent_page_view</span></td>
+        </tr>
+        <tr>
+          <td><div class="who"><b>K. Vamsi</b><small>1791886339…</small></div></td>
+          <td><span class="tag">Field Director</span></td>
+          <td class="num">13 Oct, 10:32</td><td class="num">6m 51s</td><td class="num">38</td>
+          <td><span class="mono">summary_chart_all_pill_clicked</span></td>
+        </tr>
+      </tbody>
+    </table>
+    </div>
+  </section>
+
+  <!-- Pipeline health -->
+  <section class="health" aria-label="Pipeline health">
+    <div>
+      <div class="k">Consumer lag</div>
+      <div class="v ok">0 events</div>
+    </div>
+    <div>
+      <div class="k">Last write to Postgres</div>
+      <div class="v">14s ago</div>
+    </div>
+    <div>
+      <div class="k">Duplicates skipped (24h)</div>
+      <div class="v">3</div>
+    </div>
+    <div>
+      <div class="k">Aggregation jobs</div>
+      <div class="v ok">4 of 4 passing</div>
+    </div>
+  </section>
+
+  <footer>
+    <span>Event Hub <span class="mono">fcr-ai-telemetry-eh</span> · consumer <span class="mono">qa-consumer</span></span>
+    <span>Rollups last run 00:05 · session sweep 2m ago</span>
+  </footer>
+
+</div>
+
+<script>
+  document.querySelectorAll('.controls .pill').forEach(function (b) {
+    b.addEventListener('click', function () {
+      document.querySelectorAll('.controls .pill').forEach(function (o) {
+        o.setAttribute('aria-pressed', 'false');
+      });
+      b.setAttribute('aria-pressed', 'true');
+    });
+  });
+</script>
+</body>
+</html>
